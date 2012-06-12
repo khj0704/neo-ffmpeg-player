@@ -14,9 +14,15 @@
 #include "BasicPlayer.h"
 #include "BasicPlayerJni.h"
 
-jint Java_com_neox_test_MoviePlayView_initBasicPlayer(JNIEnv *env, jobject thiz)
+JNIEnv *g_Env = NULL;
+jobject g_thiz = NULL;
+
+JNIEXPORT jint JNICALL Java_com_neox_test_FFmpegCodec_jniInitBasicPlayer(JNIEnv *env, jobject thiz)
 {
+	g_Env = env;
+	g_thiz = thiz;
 	if (android_getCpuFamily() == ANDROID_CPU_FAMILY_ARM && (android_getCpuFeatures() & ANDROID_CPU_ARM_FEATURE_NEON) != 0) {
+		avcodec_init();
 		av_register_all();
 		LOG(ANDROID_LOG_DEBUG, LOG_TAG, "av_register_all()");	
 		return 0;
@@ -27,25 +33,33 @@ jint Java_com_neox_test_MoviePlayView_initBasicPlayer(JNIEnv *env, jobject thiz)
 	}
 }
 
-jint Java_com_neox_test_MoviePlayView_openMovie(JNIEnv *env, jobject thiz, jstring filePath)
+JNIEXPORT jint JNICALL Java_com_neox_test_FFmpegCodec_jniOpenMovie(JNIEnv *env, jobject thiz, jstring filePath)
 {
 	const jbyte *str;
 	int result;
 
+	g_Env = env;
+	g_thiz = thiz;
 	
+
 	str = (*env)->GetStringUTFChars(env, filePath, NULL);
 
 	result = openMovie(str);
 
 	(*env)->ReleaseStringUTFChars(env, filePath, str);
-
+	
+	
 	return result;
+	
 }
 
-jint Java_com_neox_test_MoviePlayView_renderFrame(JNIEnv *env, jobject thiz, jobject bitmap)
+JNIEXPORT jint JNICALL Java_com_neox_test_FFmpegCodec_jniRenderFrame(JNIEnv *env, jobject thiz, jobject bitmap)
 {
     void *pixels;
 	int result;
+
+	g_Env = env;
+	g_thiz = thiz;
 
 	if ((result = AndroidBitmap_lockPixels(env, bitmap, &pixels)) < 0)
 		return result;
@@ -56,26 +70,52 @@ jint Java_com_neox_test_MoviePlayView_renderFrame(JNIEnv *env, jobject thiz, job
 	AndroidBitmap_unlockPixels(env, bitmap);
 }
 
-jint Java_com_neox_test_MoviePlayView_getMovieWidth(JNIEnv *env, jobject thiz)
+JNIEXPORT jint JNICALL Java_com_neox_test_FFmpegCodec_jniGetMovieWidth(JNIEnv *env, jobject thiz)
 {
+	g_Env = env;
+	g_thiz = thiz;
 	return getWidth();
 }
 
-jint Java_com_neox_test_MoviePlayView_getMovieHeight(JNIEnv *env, jobject thiz)
+JNIEXPORT jint JNICALL Java_com_neox_test_FFmpegCodec_jniGetMovieHeight(JNIEnv *env, jobject thiz)
 {
+	g_Env = env;
+	g_thiz = thiz;
 	return getHeight();
 }
 
-void Java_com_neox_test_MoviePlayView_closeMovie(JNIEnv *env, jobject thiz)
+JNIEXPORT void JNICALL Java_com_neox_test_FFmpegCodec_jniCloseMovie(JNIEnv *env, jobject thiz)
 {
+	g_Env = env;
+	g_thiz = thiz;
 	LOG(ANDROID_LOG_DEBUG, LOG_TAG, "MoviePlayView closeMovie()");	
 	closeMovie();
 }
 
-void Java_com_neox_test_FFmpegBasicActivity_jniReadPacket(JNIEnv *env, jobject thiz)
+JNIEXPORT jint JNICALL Java_com_neox_test_FFmpegCodec_jniReadPacket(JNIEnv *env, jobject thiz)
 {
-	LOG(ANDROID_LOG_DEBUG, LOG_TAG, "jniReadPacket()");	
+	g_Env = env;
+	g_thiz = thiz;
+//	LOG(ANDROID_LOG_DEBUG, LOG_TAG, "jniReadPacket()");	
+	return readPacket();
 }
+
+JNIEXPORT void JNICALL Java_com_neox_test_FFmpegCodec_jniDecodeAudio(JNIEnv *env, jobject thiz)
+{
+	g_Env = env;
+	g_thiz = thiz;
+
+	decodeAudio();
+}
+
+JNIEXPORT void JNICALL Java_com_neox_test_FFmpegCodec_jniStopDecodeAudio(JNIEnv *env, jobject thiz)
+{
+	g_Env = env;
+	g_thiz = thiz;
+	stopDecodeAudio();
+}
+
+
 
 /*
 void Java_com_neox_test_FFmpegBasicActivity_audioFillStreamBuffer(JNIEnv* env, void* reserved, jshortArray location, jint size)
