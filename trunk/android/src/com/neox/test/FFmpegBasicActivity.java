@@ -1,6 +1,7 @@
 package com.neox.test;
 
 import android.app.Activity;
+import android.graphics.Bitmap;
 import android.media.AudioFormat;
 import android.media.AudioManager;
 import android.media.AudioTrack;
@@ -10,8 +11,8 @@ import android.util.Log;
 public class FFmpegBasicActivity extends Activity {
 	
 	MoviePlayView playView;
-	private boolean mStopAudioThreads;
-	Thread mStreamThread;
+//	private boolean mStopAudioThreads;
+	FFmpegCodec ffmpeg;
 	
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -20,6 +21,9 @@ public class FFmpegBasicActivity extends Activity {
         Log.d("ffmpeg", "FFmpegBasicActivity onCreate()");
         
         playView = new MoviePlayView(this);
+        ffmpeg = FFmpegCodec.getInstance();
+        ffmpeg.openMovie();
+        
         setContentView(playView);
     }
 
@@ -30,7 +34,8 @@ public class FFmpegBasicActivity extends Activity {
 //        String path = "/mnt/sdcard/tcloud/video/dd.mp4";
 //		playView.playMovie(path);
 //		startAudioThreads();
-        startPacketReaderThread();
+		ffmpeg.startPacketReaderThread();
+		ffmpeg.startAudioDecodeThread();
 	}
 
 	@Override
@@ -39,92 +44,46 @@ public class FFmpegBasicActivity extends Activity {
 		Log.d("ffmpeg", "FFmpegBasicActivity onPause()");
 //		playView.stopMovie();
 //		stopAudioThreads();
-		stopPacketReaderThread();
-	}
-	
-	Runnable mStreams = new Runnable()
-	{
-	    private AudioTrack mMusicTrack;
-
-		public void run()
-	    {
-	        // Create a streaming AudioTrack for music playback
-	        int minBufferSize = AudioTrack.getMinBufferSize(44100, AudioFormat.CHANNEL_CONFIGURATION_STEREO, AudioFormat.ENCODING_PCM_16BIT);
-	        int bufferSize = 4 * minBufferSize;
-	        short[] streamBuffer = new short[bufferSize / 2];
-	        mMusicTrack = new AudioTrack(AudioManager.STREAM_MUSIC, 44100, AudioFormat.CHANNEL_CONFIGURATION_STEREO, AudioFormat.ENCODING_PCM_16BIT, bufferSize, AudioTrack.MODE_STREAM);
-	        mMusicTrack.play();
-
-	        while (!mStopAudioThreads)
-	        {
-	            // Fill buffer with PCM data from C++
-	            audioFillStreamBuffer(streamBuffer, bufferSize);
-
-	            // Stream PCM data into the music AudioTrack
-	            mMusicTrack.write(streamBuffer, 0, bufferSize / 2);
-	        }
-
-	        mMusicTrack.flush();
-	        mMusicTrack.stop();
-	    }
-	};
-	protected boolean stopPacketReaderThread;	
- 
-	Runnable packetReaderThread = new Runnable() {
-		public void run() {
-	        while (!stopPacketReaderThread) {
-	        	jniReadPacket();
-	        	try {
-					Thread.sleep(1000);
-				} catch (InterruptedException e) {
-					e.printStackTrace();
-				}
-	        }
-	    }
-	};	
-	
-	void startAudioThreads()
-	{
-	    mStopAudioThreads = false;
-	    mStreamThread = new Thread(mStreams);
-	    mStreamThread.start();
-	}
-	
-	void stopAudioThreads()
-	{
-//	    mStopAudioThreads = true;
-	    stopPacketReaderThread = true;
-	    
-	    try {
-	        mStreamThread.join();
-	    }
-	    catch (final Exception ex) {
-	        ex.printStackTrace();
-	    }
+		ffmpeg.stopPacketReaderThread();
+		ffmpeg.stopAudioDecodeThread();
 	}
 
-	
-	void startPacketReaderThread()
-	{
-		stopPacketReaderThread = false;
-	    mStreamThread = new Thread(packetReaderThread);
-	    mStreamThread.start();
+	@Override
+	protected void onDestroy() {
+		ffmpeg.closeMovie();
+		super.onDestroy();
 	}
 	
-	void stopPacketReaderThread()
-	{
-	    stopPacketReaderThread = true;
-	    
-	    try {
-	        mStreamThread.join();
-	    }
-	    catch (final Exception ex) {
-	        ex.printStackTrace();
-	        Log.d("ffmpeg", ex.getMessage());
-	    }
-	    Log.d("ffmpeg", "PacketReaderThread End");
-	}	
-	public static native void audioFillStreamBuffer(short[] streamBuffer, int bufferSize);	
-	public static native void jniReadPacket();	
+	
+	
+	
+//	Runnable mStreams = new Runnable()
+//	{
+//	    private AudioTrack mMusicTrack;
+//
+//		public void run()
+//	    {
+//	        // Create a streaming AudioTrack for music playback
+//	        int minBufferSize = AudioTrack.getMinBufferSize(44100, AudioFormat.CHANNEL_CONFIGURATION_STEREO, AudioFormat.ENCODING_PCM_16BIT);
+//	        int bufferSize = 4 * minBufferSize;
+//	        short[] streamBuffer = new short[bufferSize / 2];
+//	        mMusicTrack = new AudioTrack(AudioManager.STREAM_MUSIC, 44100, AudioFormat.CHANNEL_CONFIGURATION_STEREO, AudioFormat.ENCODING_PCM_16BIT, bufferSize, AudioTrack.MODE_STREAM);
+//	        mMusicTrack.play();
+//
+//	        while (!mStopAudioThreads)
+//	        {
+//	            // Fill buffer with PCM data from C++
+//	            audioFillStreamBuffer(streamBuffer, bufferSize);
+//
+//	            // Stream PCM data into the music AudioTrack
+//	            mMusicTrack.write(streamBuffer, 0, bufferSize / 2);
+//	        }
+//
+//	        mMusicTrack.flush();
+//	        mMusicTrack.stop();
+//	    }
+//	};
+
+	
 	
 }

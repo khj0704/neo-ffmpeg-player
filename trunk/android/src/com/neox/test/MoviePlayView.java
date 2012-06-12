@@ -20,52 +20,42 @@ public class MoviePlayView extends View {
         
         Log.d("ffmpeg", "MoviePlayView()");
         
-        if (initBasicPlayer() < 0) {
-        	Toast.makeText(context, "CPU doesn't support NEON", Toast.LENGTH_LONG).show();
-        	
-        	((Activity)context).finish();
-        }
+//        if (initBasicPlayer() < 0) {
+//        	Toast.makeText(context, "CPU doesn't support NEON", Toast.LENGTH_LONG).show();
+//        	
+//        	((Activity)context).finish();
+//        }
         
         
     }
 
-    @Override
-    protected void onDraw(Canvas canvas) {
-    	if(isOpen) {
-	    	renderFrame(mBitmap);
-	        canvas.drawBitmap(mBitmap, 0, 0, null);
-	
-	        invalidate();
-    	}
-    }
-
-    public void playMovie(String path) {
-    	isOpen = false;
-        int openResult = openMovie(path);
-        if (openResult < 0) {
-        	Toast.makeText(mContext, "Open Movie Error: " + openResult, Toast.LENGTH_LONG).show();
-        	
-//        	((Activity)mContext).finish();
-        }
-        else {
-        	mBitmap = Bitmap.createBitmap(getMovieWidth(), getMovieHeight(), Bitmap.Config.RGB_565);
-        	isOpen = true;
-        }
-    }
+//    @Override
+//    protected void onDraw(Canvas canvas) {
+//    	if(isOpen) {
+//	    	renderFrame(mBitmap);
+//	        canvas.drawBitmap(mBitmap, 0, 0, null);
+//	
+//	        invalidate();
+//    	}
+//    }
+//
+//    public void playMovie(String path) {
+//    	isOpen = false;
+//        int openResult = openMovie(path);
+//        if (openResult < 0) {
+//        	Toast.makeText(mContext, "Open Movie Error: " + openResult, Toast.LENGTH_LONG).show();
+//        	
+////        	((Activity)mContext).finish();
+//        }
+//        else {
+//        	mBitmap = Bitmap.createBitmap(getMovieWidth(), getMovieHeight(), Bitmap.Config.RGB_565);
+//        	isOpen = true;
+//        }
+//    }
+//    
+//    public void stopMovie() {
+//    	closeMovie();
+//    }
     
-    public void stopMovie() {
-    	closeMovie();
-    }
-    
-    static {
-        System.loadLibrary("basicplayer");
-    }
-
-    public static native int initBasicPlayer();
-	public static native int openMovie(String filePath);
-	public static native int renderFrame(Bitmap bitmap);
-	public static native int getMovieWidth();
-	public static native int getMovieHeight();
-	public static native void closeMovie();
 
 }
