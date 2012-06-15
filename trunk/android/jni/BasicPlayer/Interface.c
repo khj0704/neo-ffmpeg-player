@@ -16,6 +16,7 @@
 
 JNIEnv *g_Env = NULL;
 jobject g_thiz = NULL;
+jobject g_bitmap = NULL;
 
 JNIEXPORT jint JNICALL Java_com_neox_test_FFmpegCodec_jniInitBasicPlayer(JNIEnv *env, jobject thiz)
 {
@@ -108,13 +109,47 @@ JNIEXPORT void JNICALL Java_com_neox_test_FFmpegCodec_jniDecodeAudio(JNIEnv *env
 	decodeAudio();
 }
 
-JNIEXPORT void JNICALL Java_com_neox_test_FFmpegCodec_jniStopDecodeAudio(JNIEnv *env, jobject thiz)
+JNIEXPORT void JNICALL Java_com_neox_test_FFmpegCodec_jniDecodeVideo(JNIEnv *env, jobject thiz)
 {
 	g_Env = env;
 	g_thiz = thiz;
-	stopDecodeAudio();
+
+	decodeVideo();
 }
 
+JNIEXPORT void JNICALL Java_com_neox_test_FFmpegCodec_jniStopDecode(JNIEnv *env, jobject thiz)
+{
+	g_Env = env;
+	g_thiz = thiz;
+	stopDecode();
+}
+
+JNIEXPORT jint JNICALL Java_com_neox_test_FFmpegCodec_jniSetBitmap(JNIEnv *env, jobject thiz, jobject bitmap)
+{
+    void *pixels;
+	int result;
+
+	g_Env = env;
+	g_thiz = thiz;
+
+	g_bitmap = bitmap;
+
+	if ((result = AndroidBitmap_lockPixels(env, bitmap, &pixels)) < 0)
+		return result;
+
+	decodeFrame();
+	copyPixels((uint8_t*)pixels);
+
+	AndroidBitmap_unlockPixels(env, bitmap);
+}
+
+JNIEXPORT jbyteArray JNICALL Java_com_neox_test_FFmpegCodec_jniGetVideoFrame(JNIEnv *env, jobject thiz, jobject bitmap)
+{
+	g_Env = env;
+	g_thiz = thiz;
+
+	getVideoFrame(bitmap);
+}
 
 
 /*

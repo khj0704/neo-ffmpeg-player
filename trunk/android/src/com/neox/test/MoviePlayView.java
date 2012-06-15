@@ -1,17 +1,17 @@
 package com.neox.test;
 
-import android.app.Activity;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.util.Log;
 import android.view.View;
-import android.widget.Toast;
 
 public class MoviePlayView extends View {
     private Bitmap mBitmap;
 	private Context mContext;
 	private boolean isOpen;
+	private boolean initialized;
+	private FFmpegCodec ffmpeg;
 
     public MoviePlayView(Context context) {
         super(context);
@@ -19,6 +19,7 @@ public class MoviePlayView extends View {
         mContext = context;
         
         Log.d("ffmpeg", "MoviePlayView()");
+        initialized = false;
         
 //        if (initBasicPlayer() < 0) {
 //        	Toast.makeText(context, "CPU doesn't support NEON", Toast.LENGTH_LONG).show();
@@ -28,16 +29,32 @@ public class MoviePlayView extends View {
         
         
     }
+    
+    public void setFFmpegCodec(FFmpegCodec codec) {
+    	ffmpeg = codec;
+    }
 
-//    @Override
-//    protected void onDraw(Canvas canvas) {
-//    	if(isOpen) {
+    public void createBitmap(int width, int height) {
+    	mBitmap = Bitmap.createBitmap(width, height, Bitmap.Config.RGB_565);
+    	initialized = true;
+    }
+  
+    public Bitmap getBitmap() {
+    	return mBitmap;
+    }
+    
+    @Override
+    protected void onDraw(Canvas canvas) {
+    	if(initialized) {
 //	    	renderFrame(mBitmap);
-//	        canvas.drawBitmap(mBitmap, 0, 0, null);
-//	
+//    		Log.e("ffmpeg", "draw!!!");
+    		ffmpeg.getVideoFrame(mBitmap);
+	        canvas.drawBitmap(mBitmap, 0, 0, null);
+	        
+	
 //	        invalidate();
-//    	}
-//    }
+    	}
+    }
 //
 //    public void playMovie(String path) {
 //    	isOpen = false;

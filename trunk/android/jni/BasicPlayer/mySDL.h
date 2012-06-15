@@ -44,8 +44,12 @@ int SDL_mutexV(SDL_mutex *mutex);
 SDL_cond * SDL_CreateCond(void);
 void SDL_DestroyCond(SDL_cond *cond);
 int SDL_CondSignal(SDL_cond *cond);
+int SDL_CondBroadcast(SDL_cond *cond);
 int SDL_CondWait(SDL_cond *cond, SDL_mutex *mutex);
 
 
+typedef uint32_t	Uint32;
+
+void SDL_Delay (Uint32 ms);
 
 #endif

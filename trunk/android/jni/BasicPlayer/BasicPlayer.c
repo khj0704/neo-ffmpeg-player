@@ -39,10 +39,15 @@ struct SwsContext *gImgConvertCtx = NULL;
 int gPictureSize = 0;
 uint8_t *gVideoBuffer = NULL;
 
-char buff[1024];
+
+enum PixelFormat desiredPictureFormat = PIX_FMT_RGB565;
+
+
 
 extern JNIEnv *g_Env;
 extern jobject g_thiz;
+
+char buff[1024];
 
 void my_log(void* avcl, int level, const char *fmt, va_list vl) 
 {
@@ -61,6 +66,7 @@ typedef struct PacketQueue {
 } PacketQueue;
 
 PacketQueue audioq;
+PacketQueue videoq;
 
 int quit = 0;
 
@@ -110,7 +116,7 @@ static int packet_queue_get(PacketQueue *q, AVPacket *pkt, int block)
     
 		if(quit) {
 			ret = -1;
-			PRINT(ANDROID_LOG_DEBUG, LOG_TAG, "packet_queue_get, quit flag is set, return -1!!!");	
+			LOGE("packet_queue_get, quit flag is set, return -1!!!");	
 			break;
 		}
 
@@ -129,8 +135,9 @@ static int packet_queue_get(PacketQueue *q, AVPacket *pkt, int block)
 			ret = 0;
 			break;
 		} else {
-			PRINT(ANDROID_LOG_DEBUG, LOG_TAG, "packet_queue_get, queue is empty, wait!!!");	
+			LOGE("packet_queue_get, queue is empty, wait!!!");	
 			SDL_CondWait(q->cond, q->mutex);
+			LOGE("packet_queue_get, wait ended!!!");	
 		}
 	}
 	SDL_UnlockMutex(q->mutex);
@@ -192,25 +199,25 @@ int openMovie(const char filePath[])
 	int i;
 
 	if (gFormatCtx != NULL) {
-		LOG(ANDROID_LOG_DEBUG, LOG_TAG, "gFormatCtx != null");	
+		LOGE("gFormatCtx != null");	
 		return -1;
 	}
 
 	if (av_open_input_file(&gFormatCtx, filePath, NULL, 0, NULL) != 0) {
-		LOG(ANDROID_LOG_DEBUG, LOG_TAG, "av_open_input_file failed!!!");	
+		LOGE("av_open_input_file failed!!!");	
 		return -2;
 	}
 
 	if (av_find_stream_info(gFormatCtx) < 0) {
-		LOG(ANDROID_LOG_DEBUG, LOG_TAG, "av_find_stream_info failed.");	
+		LOGE("av_find_stream_info failed.");	
 		return -3;
 	}
 
 //	av_log_set_callback(my_log);
 	dump_format(gFormatCtx, 0, filePath, 0);
 
-    LOGE("audio format: %s", gFormatCtx->iformat->name);
-    LOGI("audio bitrate: %d", gFormatCtx->bit_rate);	
+	LOGW("audio format: %s", gFormatCtx->iformat->name);
+	LOGW("audio bitrate: %d", gFormatCtx->bit_rate);	
 	
 	gVideoStreamIdx = -1;
 	gAudioStreamIdx = -1;
@@ -227,12 +234,12 @@ int openMovie(const char filePath[])
 		
 	}
 	if (gVideoStreamIdx == -1) {
-		LOG(ANDROID_LOG_DEBUG, LOG_TAG, "gVideoStreamIdx == -1");	
+		LOGE("gVideoStreamIdx == -1");	
 		return -4;
 	}
 
 	if (gAudioStreamIdx == -1) {
-		LOG(ANDROID_LOG_DEBUG, LOG_TAG, "gAudioStreamIdx == -1");	
+		LOGE("gAudioStreamIdx == -1");	
 		return -4;
 	}
 
@@ -241,7 +248,7 @@ int openMovie(const char filePath[])
 
 	gVideoCodec = avcodec_find_decoder(gVideoCodecCtx->codec_id);
 	if (gVideoCodec == NULL) {
-		LOG(ANDROID_LOG_DEBUG, LOG_TAG, "avcodec_find_decoder failed!!!");	
+		LOGE("avcodec_find_decoder failed!!!");	
 		return -5;
 	}
 
@@ -249,42 +256,47 @@ int openMovie(const char filePath[])
 	gAudioCodecCtx = gFormatCtx->streams[gAudioStreamIdx]->codec;
 	gAudioCodec = avcodec_find_decoder(gAudioCodecCtx->codec_id);
 	if (gAudioCodec == NULL) {
-		LOG(ANDROID_LOG_DEBUG, LOG_TAG, "avcodec_find_decoder failed(audio)!!!");	
+		LOGE("avcodec_find_decoder failed(audio)!!!");	
 		return -5;
 	}
 
 
 	if (avcodec_open(gVideoCodecCtx, gVideoCodec) < 0) {
-		LOG(ANDROID_LOG_DEBUG, LOG_TAG, "avcodec_open failed!!!");	
+		LOGE("avcodec_open failed!!!");	
 		return -6;
 	}
 
 	if (avcodec_open(gAudioCodecCtx, gAudioCodec) < 0) {
-		LOG(ANDROID_LOG_DEBUG, LOG_TAG, "avcodec_open failed(audio)!!!");	
+		LOGE("avcodec_open failed(audio)!!!");	
 		return -6;
 	}
 
 	gFrame = avcodec_alloc_frame();
 	if (gFrame == NULL) {
-		LOG(ANDROID_LOG_DEBUG, LOG_TAG, "avcodec_alloc_frame failed!!!!");	
+		LOGE("avcodec_alloc_frame failed!!!!");	
 		return -7;
 	}
 
 	gFrameRGB = avcodec_alloc_frame();
 	if (gFrameRGB == NULL) {
-		LOG(ANDROID_LOG_DEBUG, LOG_TAG, "avcodec_alloc_frame failed!!!");	
+		LOGE("avcodec_alloc_frame failed!!!");	
 		return -8;
 	}
 
-	gPictureSize = avpicture_get_size(PIX_FMT_RGB565LE, gVideoCodecCtx->width, gVideoCodecCtx->height);
-	gVideoBuffer = (uint8_t*)(malloc(sizeof(uint8_t) * gPictureSize));
 
-	avpicture_fill((AVPicture*)gFrameRGB, gVideoBuffer, PIX_FMT_RGB565LE, gVideoCodecCtx->width, gVideoCodecCtx->height);
+//	gPictureSize = avpicture_get_size(PIX_FMT_RGB565LE, gVideoCodecCtx->width, gVideoCodecCtx->height);
+	gPictureSize = avpicture_get_size(desiredPictureFormat, gVideoCodecCtx->width, gVideoCodecCtx->height);
+	gVideoBuffer = (uint8_t *)av_malloc(gPictureSize * sizeof(uint8_t));
+//	gVideoBuffer = (uint8_t*)(malloc(sizeof(uint8_t) * gPictureSize));
+
+	avpicture_fill((AVPicture*)gFrameRGB, gVideoBuffer, desiredPictureFormat, gVideoCodecCtx->width, gVideoCodecCtx->height);
+//	avpicture_fill((AVPicture*)gFrameRGB, gVideoBuffer, PIX_FMT_RGB565LE, gVideoCodecCtx->width, gVideoCodecCtx->height);
 	
 	PRINT(ANDROID_LOG_DEBUG, LOG_TAG, "openMovie Success!!!! [%s]", filePath);	
 
 
 	packet_queue_init(&audioq);
+	packet_queue_init(&videoq);
 
 	return 0;
 	
@@ -325,15 +337,16 @@ int audio_decode_frame(AVCodecContext *aCodecCtx, uint8_t *audio_buf, int buf_si
 			}
 			// We have data, return it and come back for more later 
 			return data_size;
+			LOGI("audio_decode_frame loop 1");
 		}
 		if(pkt.data)
 			av_free_packet(&pkt);
 
 		if(quit) {
-			PRINT(ANDROID_LOG_DEBUG, LOG_TAG, "audio_decode_frame, quit flag is set, return -1!!!");	
+			LOGE("audio_decode_frame, quit flag is set, return -1!!!");	
 			return -1;
 		}
-
+		LOGI("audio_decode_frame loop 2");
 	}
 
 
@@ -389,20 +402,28 @@ int readPacket()
 	// Is this a packet from the video stream?
 		if(packet.stream_index==gVideoStreamIdx) {
 			// Decode video frame
-			PRINT(ANDROID_LOG_DEBUG, LOG_TAG, "VideoFrame!!!!, packet data size[%d]", packet.size);	
+//			PRINT(ANDROID_LOG_DEBUG, LOG_TAG, "VideoFrame!!!!, packet data size[%d]", packet.size);	
+			packet_queue_put(&videoq, &packet);
 		} else if(packet.stream_index==gAudioStreamIdx) {
-			PRINT(ANDROID_LOG_DEBUG, LOG_TAG, "AudioFrame!!!!, packet data size[%d]", packet.size);	
+//			PRINT(ANDROID_LOG_DEBUG, LOG_TAG, "AudioFrame!!!!, packet data size[%d]", packet.size);	
 			packet_queue_put(&audioq, &packet);
-			PRINT(ANDROID_LOG_DEBUG, LOG_TAG, "AudioFrame!!!!, queue size[%d], total data size[%d]", audioq.nb_packets, audioq.size);	
+//			PRINT(ANDROID_LOG_DEBUG, LOG_TAG, "AudioFrame!!!!, queue size[%d], total data size[%d]", audioq.nb_packets, audioq.size);	
 		} else {
-			av_free_packet(&packet);
 			PRINT(ANDROID_LOG_DEBUG, LOG_TAG, "ElseFrame!!!![%d]", packet.stream_index);	
+			av_free_packet(&packet);
 		}
 		return 0;
 	}
 	else {
-		PRINT(ANDROID_LOG_DEBUG, LOG_TAG, "av_read_frame failed!!!!");	
-		return -1;
+		 if(url_ferror(&gFormatCtx->pb) == 0) {
+			LOGE("no ferror!!!!");	
+			SDL_Delay(100); /* no error; wait for user input */
+			return 0;
+		  } 
+		 else {
+			LOGE("av_read_frame failed!!!!");	
+			return -1;
+		  }
 	}
 }
 
@@ -414,43 +435,18 @@ static void pushAudioData(uint8_t *audioData, int audioSize)
 	jclass cls = 0;
 	jmethodID mid = 0;
 
-/*
-	jclass cls = 0;
-	jmethodID mid = 0;
-
-	 cls = (*env)->FindClass(env, "com/neox/test/FFmpegCodec");
-	if(cls == NULL)
-	{
-		LOGE("openMovie!!!!FindClass Success");
-		return -1;
-     	}
-
-	mid = (*env)->GetMethodID(env, cls, "playAudioFrame", "(I)V");
-	if (mid)
-	{
-		LOGE("openMovie!!!!!GetMethodID() Success");
-	}
-	else {
-		LOGE("openMovie!!!!!GetMethodID() failed.");
-	}	
-
-*/
-
 
 //	if ((*g_Env)->PushLocalFrame(g_Env, 16) < 0)
 //		return;
 
 	cls = (*g_Env)->GetObjectClass(g_Env, obj); 
-//	cls = (*g_Env)->FindClass(g_Env, "com/neox/test/FFmpegCodec");
 	if (cls)
 	{
-//		mid = (*g_Env)->GetMethodID(g_Env, cls, "decodeAudio", "([BI)V");
 		mid = (*g_Env)->GetMethodID(g_Env, cls, "playAudioFrame", "([BI)V");
 		if (mid)
 		{
 			jbyteArray jAudioBuffer;
 			jbyte *jAudioArray;
-			char * sVCard, * sLUID;
 
 			jAudioBuffer = (*g_Env)->NewByteArray(g_Env, audioSize);
 
@@ -460,8 +456,6 @@ static void pushAudioData(uint8_t *audioData, int audioSize)
 
 			(*g_Env)->CallObjectMethod(g_Env, obj, mid, jAudioBuffer, audioSize);
 
-//			(*g_Env)->CallStaticObjectMethod(g_Env, cls, mid, jAudioBuffer, audioSize);
-			
 
 			// 에뮬레이터에서는 아래 문장 넣어야 정상동작함. 에뮬 버그로 보임.
 //			(*g_Env)->DeleteGlobalRef(g_env, aVCard); // JNI 버그인지 모르겠으나 Global Ref Table에도 추가된다. 그래서 명시적으로 Delete 해준다.
@@ -478,9 +472,6 @@ static void pushAudioData(uint8_t *audioData, int audioSize)
 //	(*g_Env)->PopLocalFrame(g_Env, NULL);
 }
 
-
-
-
 static uint8_t audio_buf[(AVCODEC_MAX_AUDIO_FRAME_SIZE * 3) / 2];
 
 void decodeAudio() 
@@ -493,28 +484,164 @@ void decodeAudio()
 	quit = 0;
 
 
-	LOGE("start audio_decode_frame");	
+	LOGI("start audio_decode_frame");	
 	audio_size = audio_decode_frame(gAudioCodecCtx, audio_buf, sizeof(audio_buf));
 
-	LOGE("end audio_decode_frame, decoded audio size[%d]", audio_size);	
+	LOGI("end audio_decode_frame, decoded audio size[%d]", audio_size);	
 	
 	if(audio_size < 0) {
 		/* If error, output silence */
+		LOGE("decoded audio size is minus");	
 		audio_buf_size = 1024; // arbitrary?
 		memset(audio_buf, 0, audio_buf_size);
 	} 
 	else {
 		audio_buf_size = audio_size;
-		LOGE("pushAudioData[%d]", audio_size);	
+		LOGI("pushAudioData[%d]", audio_size);	
 		pushAudioData(audio_buf, audio_size);
     }
     audio_buf_index = 0;
 }
 
-void stopDecodeAudio()
+void stopDecode()
 {
 	quit = 1;
+	SDL_Delay(1000);
+	SDL_CondSignal(audioq.cond);
+	SDL_CondSignal(videoq.cond);
 }
+
+static void pushVideoData(uint8_t *videoData, int videoSize)
+{
+	jobject obj = g_thiz;
+	jclass cls = 0;
+	jmethodID mid = 0;
+
+
+//	if ((*g_Env)->PushLocalFrame(g_Env, 16) < 0)
+//		return;
+
+	cls = (*g_Env)->GetObjectClass(g_Env, obj); 
+	if (cls)
+	{
+		mid = (*g_Env)->GetMethodID(g_Env, cls, "displayVideoFrame", "([BI)V");
+		if (mid)
+		{
+			jbyteArray jVideoBuffer;
+			jbyte *jVideoArray;
+
+			jVideoBuffer = (*g_Env)->NewByteArray(g_Env, videoSize);
+
+			jVideoArray = (*g_Env)->GetByteArrayElements(g_Env, jVideoBuffer, NULL);
+			memcpy(jVideoArray, videoData, videoSize); 
+			(*g_Env)->ReleaseByteArrayElements(g_Env, jVideoBuffer, jVideoArray, 0);
+
+			(*g_Env)->CallObjectMethod(g_Env, obj, mid, jVideoBuffer, videoSize);
+
+
+			// 에뮬레이터에서는 아래 문장 넣어야 정상동작함. 에뮬 버그로 보임.
+//			(*g_Env)->DeleteGlobalRef(g_env, aVCard); // JNI 버그인지 모르겠으나 Global Ref Table에도 추가된다. 그래서 명시적으로 Delete 해준다.
+
+		}
+		else {
+			LOGE("GetMethodID() failed.");
+		}	
+	}
+	else {
+		LOGE("GetObjectClass() failed.");
+	}	
+
+//	(*g_Env)->PopLocalFrame(g_Env, NULL);
+}
+
+int getVideoFrame(jobject jbitmap) 
+{
+//	jbyteArray videoFrameDataArray;
+//	jbyte *videoFrameDataPtr;
+/*
+	videoFrameData = (*g_Env)->NewByteArray(g_Env, gPictureSize);
+	(*g_Env)->SetByteArrayRegion(g_Env, videoFrameData, 0, gPictureSize, gFrameRGB->data[0]);
+	(*g_Env)->ReleaseByteArrayElements(g_Env, videoFrameData, gFrameRGB->data[0], 0);
+*/
+
+
+//	videoFrameDataArray = (*g_Env)->NewByteArray(g_Env, gPictureSize);
+//	videoFrameDataPtr = (*g_Env)->GetByteArrayElements(g_Env, videoFrameDataArray, NULL);
+//	memcpy(videoFrameDataPtr, gFrameRGB->data[0], gPictureSize); 
+//	(*g_Env)->ReleaseByteArrayElements(g_Env, videoFrameDataArray, videoFrameDataPtr, 0);
+
+	
+
+//	return videoFrameDataArray;	
+
+	void *pixels;
+	if ( AndroidBitmap_lockPixels(g_Env, jbitmap, &pixels) < 0) {
+		LOGE("jni-AndroidBitmap_lockPixels failed!!!");
+		return -1;
+	}
+
+	copyPixels((uint8_t*)pixels);
+
+	AndroidBitmap_unlockPixels(g_Env, jbitmap);
+
+	return 0;
+}
+
+extern jobject g_bitmap;
+
+void decodeVideo() 
+{
+	AVPacket pkt; // 이유는 잘 모르弱愍립� static 이면 안 됨.
+	int frameFinished = 0;
+	
+	for(;;) {
+		if(quit) {
+			LOGE("decodeVideo, quit flag is set, return -1!!!");	
+			return -1;
+		}
+		
+		if(packet_queue_get(&videoq, &pkt, 1) < 0) {
+			LOGE("packet_queue_get failed!!!");
+			return -1;
+		}
+
+		avcodec_decode_video2(gVideoCodecCtx, gFrame, &frameFinished, &pkt);
+		
+		if (frameFinished) {
+			gImgConvertCtx = sws_getCachedContext(gImgConvertCtx,
+				gVideoCodecCtx->width, gVideoCodecCtx->height, gVideoCodecCtx->pix_fmt,
+				gVideoCodecCtx->width, gVideoCodecCtx->height, desiredPictureFormat, SWS_BICUBIC, NULL, NULL, NULL);
+//				gVideoCodecCtx->width, gVideoCodecCtx->height, PIX_FMT_RGB565LE, SWS_BICUBIC, NULL, NULL, NULL);
+			
+			sws_scale(gImgConvertCtx, gFrame->data, gFrame->linesize, 0, gVideoCodecCtx->height, gFrameRGB->data, gFrameRGB->linesize);
+			
+			av_free_packet(&pkt);
+
+			pushVideoData(gFrameRGB->data[0], gPictureSize);
+
+/*			
+
+			void *pixels;
+			if ( AndroidBitmap_lockPixels(g_Env, g_bitmap, &pixels) < 0) {
+				LOGE("AndroidBitmap_lockPixels failed!!!");
+				return -1;
+			}
+
+			copyPixels((uint8_t*)pixels);
+
+			AndroidBitmap_unlockPixels(g_Env, g_bitmap);
+
+			
+*/
+			return 0;
+		}
+		av_free_packet(&pkt);
+
+		
+	}
+
+}
+
 
 void copyPixels(uint8_t *pixels)
 {
@@ -533,8 +660,12 @@ int getHeight()
 
 void closeMovie()
 {
+	LOGE("jni-closeMovie() called, exit");
+
+	exit(1); // when didn't call exit, it doesn't work!!
+
 	if (gVideoBuffer != NULL) {
-		free(gVideoBuffer);
+		av_free(gVideoBuffer);
 		gVideoBuffer = NULL;
 	}
 	
@@ -543,11 +674,13 @@ void closeMovie()
 	if (gFrameRGB != NULL)
 		av_freep(gFrameRGB);
 
+
+
 	if (gVideoCodecCtx != NULL) {
 		avcodec_close(gVideoCodecCtx);
 		gVideoCodecCtx = NULL;
 	}
-
+	
 	if (gAudioCodecCtx != NULL) {
 		avcodec_close(gAudioCodecCtx);
 		gAudioCodecCtx = NULL;
@@ -557,6 +690,10 @@ void closeMovie()
 		av_close_input_file(gFormatCtx);
 		gFormatCtx = NULL;
 	}
+
+	LOGE("jni-closeMovie() ended!!!");
+
+//	exit(1);
 }
 
 
