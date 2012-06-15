@@ -94,6 +94,23 @@ int SDL_CondSignal(SDL_cond *cond)
 	return retval;
 }
 
+/* Restart all threads that are waiting on the condition variable */
+int SDL_CondBroadcast(SDL_cond *cond)
+{
+	int retval;
+
+	if ( ! cond ) {
+		SDL_SetError("Passed a NULL condition variable");
+		return -1;
+	}
+
+	retval = 0;
+	if ( pthread_cond_broadcast(&cond->cond) != 0 ) {
+		SDL_SetError("pthread_cond_broadcast() failed");
+		retval = -1;
+	}
+	return retval;
+}
 
 /* Lock the mutex */
 int SDL_mutexP(SDL_mutex *mutex)
@@ -147,3 +164,43 @@ int SDL_CondWait(SDL_cond *cond, SDL_mutex *mutex)
 	}
 	return retval;
 }
+
+static struct timeval start;
+
+Uint32 SDL_GetTicks (void)
+{
+	Uint32 ticks;
+	struct timeval now;
+	gettimeofday(&now, NULL);
+	ticks=(now.tv_sec-start.tv_sec)*1000+(now.tv_usec-start.tv_usec)/1000;
+	return(ticks);
+}
+
+void SDL_Delay (Uint32 ms)
+{
+	int was_error;
+
+	struct timeval tv;
+	Uint32 then, now, elapsed;
+
+	/* Set the timeout interval */
+	then = SDL_GetTicks();
+	do {
+		errno = 0;
+
+		/* Calculate the time interval left (in case of interrupt) */
+		now = SDL_GetTicks();
+		elapsed = (now-then);
+		then = now;
+		if ( elapsed >= ms ) {
+			break;
+		}
+		ms -= elapsed;
+		tv.tv_sec = ms/1000;
+		tv.tv_usec = (ms%1000)*1000;
+
+		was_error = select(0, NULL, NULL, NULL, &tv);
+	} while ( was_error && (errno == EINTR) );
+}
+
+
