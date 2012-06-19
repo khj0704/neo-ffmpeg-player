@@ -7,6 +7,15 @@
 #include <pthread.h>
 
 
+#define	SDL_INIT_TIMER		0x00000001
+#define SDL_INIT_AUDIO		0x00000010
+#define SDL_INIT_VIDEO		0x00000020
+#define SDL_INIT_CDROM		0x00000100
+#define SDL_INIT_JOYSTICK	0x00000200
+#define SDL_INIT_NOPARACHUTE	0x00100000	/**< Don't catch fatal signals */
+#define SDL_INIT_EVENTTHREAD	0x01000000	/**< Not supported on all OS's */
+#define SDL_INIT_EVERYTHING	0x0000FFFF
+
 #define SDL_malloc	malloc
 #define SDL_calloc	calloc
 #define SDL_free	free
@@ -19,6 +28,24 @@ typedef struct SDL_mutex SDL_mutex;
 /** The SDL condition variable structure, defined in SDL_cond.c */
 struct SDL_cond;
 typedef struct SDL_cond SDL_cond;
+
+
+typedef enum {
+	SDL_FALSE = 0,
+	SDL_TRUE  = 1
+} SDL_bool;
+
+typedef int8_t		Sint8;
+typedef uint8_t		Uint8;
+typedef int16_t		Sint16;
+typedef uint16_t	Uint16;
+typedef int32_t		Sint32;
+typedef uint32_t	Uint32;
+
+
+int SDL_Init();
+
+void SDL_Quit(void);
 
 void SDL_SetError (const char *fmt, ...);
 
@@ -46,9 +73,8 @@ void SDL_DestroyCond(SDL_cond *cond);
 int SDL_CondSignal(SDL_cond *cond);
 int SDL_CondBroadcast(SDL_cond *cond);
 int SDL_CondWait(SDL_cond *cond, SDL_mutex *mutex);
+Uint32 SDL_GetTicks (void);
 
-
-typedef uint32_t	Uint32;
 
 void SDL_Delay (Uint32 ms);
 

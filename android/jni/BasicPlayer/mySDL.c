@@ -167,6 +167,12 @@ int SDL_CondWait(SDL_cond *cond, SDL_mutex *mutex)
 
 static struct timeval start;
 
+void SDL_StartTicks(void)
+{
+	/* Set first ticks value */
+	gettimeofday(&start, NULL);
+}
+
 Uint32 SDL_GetTicks (void)
 {
 	Uint32 ticks;
@@ -203,4 +209,54 @@ void SDL_Delay (Uint32 ms)
 	} while ( was_error && (errno == EINTR) );
 }
 
+/* The initialized subsystems */
+static Uint32 SDL_initialized = 0;
+static Uint32 ticks_started = 0;
 
+int SDL_TimerInit()
+{
+	return 0;
+}
+
+int SDL_InitSubSystem()
+{
+	/* Initialize the timer subsystem */
+	if ( ! ticks_started ) {
+		SDL_StartTicks();
+		ticks_started = 1;
+	}
+	if (!(SDL_initialized & SDL_INIT_TIMER) ) {
+		if ( SDL_TimerInit() < 0 ) {
+			return(-1);
+		}
+		SDL_initialized |= SDL_INIT_TIMER;
+	}
+	return(0);
+}
+
+int SDL_Init()
+{
+	/* Initialize the desired subsystems */
+	if ( SDL_InitSubSystem() < 0 ) {
+		return(-1);
+	}
+	return(0);
+}
+
+void SDL_TimerQuit() 
+{
+
+}
+
+void SDL_QuitSubSystem(Uint32 flags)
+{
+	if ( (flags & SDL_initialized & SDL_INIT_TIMER) ) {
+		SDL_TimerQuit();
+		SDL_initialized &= ~SDL_INIT_TIMER;
+	}
+}
+
+void SDL_Quit(void)
+{
+	SDL_QuitSubSystem(SDL_INIT_EVERYTHING);
+}
