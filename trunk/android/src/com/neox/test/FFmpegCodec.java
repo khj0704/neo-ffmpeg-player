@@ -23,6 +23,7 @@ public class FFmpegCodec {
 	private VideoView mVideoView;
 	private Context mContext;
 	private Handler mHandler;
+	private boolean isPaused;
 	
 	private static AudioTrack track;	
 	
@@ -39,6 +40,7 @@ public class FFmpegCodec {
 		mContext = context;
 		mHandler = new Handler(context.getMainLooper());
 		initialized = false;
+		isPaused = false;
 		initAudio();
 		initialized = true;
 	};
@@ -115,6 +117,17 @@ public class FFmpegCodec {
 			track.play();
 		}
 		
+		if(isPaused) {
+			synchronized (this) {
+				try {
+					this.wait();
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+					Log.e("ffmpeg", e.getMessage());
+				}
+			}
+		}
+		
 //		Log.e("ffmpeg", "track write start!!!");
 		track.write(audioData, 0, size);
 //		Log.e("ffmpeg", "track write end!!!");
@@ -144,12 +157,45 @@ public class FFmpegCodec {
 //			String str = String.format("setVideoDisplayTimer() called, delay[%d]ms, invalidate[%d]", delay, invalidate);
 //			Log.e("ffmpeg", str);
 //		}
-		mVideoView.scheduleRefresh(delay, invalidate);
+		if(!isPaused) {
+			mVideoView.scheduleRefresh(delay, invalidate);
+		}
 	}
 	
 	public int refreshVideo(Bitmap bitmap) {
 		return jniRefreshVideo(bitmap);
 	}
+
+	public boolean isPaused() {
+		return isPaused;
+	}
+	
+	public void toggle() {
+		if(isPaused) {
+			resume();
+		}
+		else {
+			pause();
+		}
+	}
+
+	private void pause() {
+		isPaused = true;
+		
+	}
+
+	private void resume() {
+		isPaused = false;
+		synchronized (this) {
+			this.notifyAll();
+		}
+		setVideoDisplayTimer(10, 1);
+	}
+
+	public void seek(int incr) {
+		jniStreamSeek(incr);
+	}
+	
 	
 	static {
         System.loadLibrary("basicplayer");
@@ -170,4 +216,7 @@ public class FFmpegCodec {
 
 
 	public native int jniRefreshVideo(Bitmap bitmap);
+	
+	public native void jniStreamSeek(int incr);
+
 }
