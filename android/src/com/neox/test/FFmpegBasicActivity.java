@@ -1,6 +1,7 @@
 package com.neox.test;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
@@ -8,6 +9,9 @@ import android.view.MotionEvent;
 import android.view.Window;
 
 public class FFmpegBasicActivity extends Activity {
+	private static final String LOG_TAG = FFmpegBasicActivity.class.getSimpleName();
+	
+	
 	VideoView videoView;
 	FFmpegCodec ffmpeg;
 	private float prevX;
@@ -21,9 +25,15 @@ public class FFmpegBasicActivity extends Activity {
         requestWindowFeature(Window.FEATURE_NO_TITLE);
         super.onCreate(savedInstanceState);
         
+
+        Intent intent = getIntent();
+		String path = intent.getStringExtra("path");
+		LogUtil.e(LOG_TAG, "path : " + path);
+
+        
         ffmpeg = FFmpegCodec.getInstance(getApplicationContext());
         
-		String path = "/mnt/sdcard/tcloud/video/dd.mp4";
+//		String path = "/mnt/sdcard/tcloud/video/dd.mp4";
         if(!ffmpeg.openVideo(path)) {
         	Log.e("ffmpeg", "ffmpeg.openVideo Failed [" + path + "]");
         	finish();

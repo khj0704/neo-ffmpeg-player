@@ -114,7 +114,8 @@ extern JNIEnv *g_Env;
 extern jobject g_thiz;
 extern JNIEnv *g_AudioEnv;
 extern jobject g_Audiothiz;
-
+extern JNIEnv *g_VideoEnv;
+extern jobject g_Videothiz;
 
 /* Since we only have one decoding thread, the Big Struct
    can be global in case we need it. */
@@ -217,18 +218,19 @@ static void packet_queue_flush(PacketQueue *q)
 static void schedule_refresh(VideoState *is, int delay, int invalidate) 
 {
 //  SDL_AddTimer(delay, sdl_refresh_timer_cb, is);
-	jobject obj = g_thiz;
+	JNIEnv *env = g_VideoEnv;
+	jobject obj = g_Videothiz;
 	jclass cls = 0;
 	jmethodID mid = 0;
 
-	if ((*g_Env)->PushLocalFrame(g_Env, 16) < 0)
+	if ((*env)->PushLocalFrame(env, 16) < 0)
 		return;
 
-	cls = (*g_Env)->GetObjectClass(g_Env, obj); 
+	cls = (*env)->GetObjectClass(env, obj); 
 	if (cls)  {
-		mid = (*g_Env)->GetMethodID(g_Env, cls, "setVideoDisplayTimer", "(II)V");
+		mid = (*env)->GetMethodID(env, cls, "setVideoDisplayTimer", "(II)V");
 		if (mid) {
-			(*g_Env)->CallObjectMethod(g_Env, obj, mid, delay, invalidate);
+			(*env)->CallObjectMethod(env, obj, mid, delay, invalidate);
 
 			// 에뮬레이터에서는 아래 문장 넣어야 정상동작함. 에뮬 버그로 보임.
 //			(*g_Env)->DeleteGlobalRef(g_env, aVCard); // JNI 버그인지 모르겠으나 Global Ref Table에도 추가된다. 그래서 명시적으로 Delete 해준다.
@@ -241,7 +243,7 @@ static void schedule_refresh(VideoState *is, int delay, int invalidate)
 		LOGE("GetObjectClass() failed.");
 	}	
 
-	(*g_Env)->PopLocalFrame(g_Env, NULL);
+	(*env)->PopLocalFrame(env, NULL);
 }
 
 int video_display(VideoPicture *vp, jobject jbitmap) 

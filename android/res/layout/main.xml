@@ -2,17 +2,16 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
-    android:orientation="vertical" >
-
-    <TextView
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:text="@string/hello" />
-    <Button
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:text="test"
-        android:onClick="onClicked" 
-        />
+    android:orientation="vertical" 
+    >
+	<ListView
+		android:id="@+id/VideoList"
+		android:layout_width="fill_parent"
+		android:layout_height="fill_parent"
+		style="@style/defaultListView"
+		android:background = "@color/color_ffffff"
+		android:fadingEdge="none" 
+		/>
+   
 
 </LinearLayout>

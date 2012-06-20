@@ -19,6 +19,8 @@ JNIEnv *g_Env = NULL;
 jobject g_thiz = NULL;
 JNIEnv *g_AudioEnv = NULL;
 jobject g_Audiothiz = NULL;
+JNIEnv *g_VideoEnv = NULL;
+jobject g_Videothiz = NULL;
 
 
 JNIEXPORT jint JNICALL Java_com_neox_test_FFmpegCodec_jniOpenVideo(JNIEnv *env, jobject thiz, jstring jFilePath)
@@ -88,6 +90,8 @@ JNIEXPORT jint JNICALL Java_com_neox_test_FFmpegCodec_jniVideoThread(JNIEnv *env
 
 JNIEXPORT jint JNICALL Java_com_neox_test_FFmpegCodec_jniAudioThread(JNIEnv *env, jobject thiz)
 {
+//	g_Env = env;
+//	g_thiz = thiz;
 	g_AudioEnv = env;
 	g_Audiothiz = thiz;
 	audioThread();
@@ -95,8 +99,10 @@ JNIEXPORT jint JNICALL Java_com_neox_test_FFmpegCodec_jniAudioThread(JNIEnv *env
 
 JNIEXPORT jint JNICALL Java_com_neox_test_FFmpegCodec_jniRefreshVideo(JNIEnv *env, jobject thiz, jobject bitmap)
 {
-	g_Env = env;
-	g_thiz = thiz;
+//	g_Env = env;
+//	g_thiz = thiz;
+	g_VideoEnv = env;
+	g_Videothiz = thiz;
 
 //	return getPicture(bitmap);
 	return video_refresh_timer(bitmap);
