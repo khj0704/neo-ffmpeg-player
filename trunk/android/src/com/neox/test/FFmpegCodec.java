@@ -53,7 +53,7 @@ public class FFmpegCodec {
 		track = new AudioTrack(AudioManager.STREAM_MUSIC, 44100,
 				AudioFormat.CHANNEL_CONFIGURATION_STEREO,
 				AudioFormat.ENCODING_PCM_16BIT, bufSize, AudioTrack.MODE_STREAM);
-		track.setStereoVolume(0.1f, 0.1f);
+//		track.setStereoVolume(0.1f, 0.1f);
 	}
 	
 	public boolean openVideo(String path) {
