@@ -25,6 +25,8 @@ int getPicture(jobject jbitmap) ;
 
 int video_refresh_timer(jobject jbitmap);
 
+void streamSeek(int pos);
+
 
 // return: == 0 - success
 //          < 0 - error code

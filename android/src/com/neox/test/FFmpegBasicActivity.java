@@ -4,11 +4,14 @@ import android.app.Activity;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
+import android.view.MotionEvent;
 import android.view.Window;
 
 public class FFmpegBasicActivity extends Activity {
 	VideoView videoView;
 	FFmpegCodec ffmpeg;
+	private float prevX;
+	private float prevY;
 	
 	static Handler _handler = new Handler();
 	
@@ -52,6 +55,33 @@ public class FFmpegBasicActivity extends Activity {
 		ffmpeg.setVideoDisplayTimer(40, 0);
 		
     }
+
+	@Override
+	public boolean onTouchEvent(MotionEvent event) {
+		float x = event.getX();
+		float y = event.getY();
+		if(event.getAction() == MotionEvent.ACTION_DOWN) {
+			prevX = x;
+			prevY = y;
+		}
+		else if(event.getAction() == MotionEvent.ACTION_UP) {
+			int delta = (int) (x - prevX); 
+			if(Math.abs(delta) < 20) {
+				ffmpeg.toggle();
+			}
+			else {
+				if(!ffmpeg.isPaused()) {
+					if(delta > 0) {
+						ffmpeg.seek(10);
+					}
+					else {
+						ffmpeg.seek(-10);
+					}
+				}
+			}
+		}
+		return super.onTouchEvent(event);
+	}
 
 	@Override
 	protected void onResume() {

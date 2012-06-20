@@ -196,6 +196,23 @@ static int packet_queue_get(PacketQueue *q, AVPacket *pkt, int block)
 	return ret;
 }
 
+static void packet_queue_flush(PacketQueue *q) 
+{
+	AVPacketList *pkt, *pkt1;
+
+	SDL_LockMutex(q->mutex);
+	for(pkt = q->first_pkt; pkt != NULL; pkt = pkt1) {
+		pkt1 = pkt->next;
+		av_free_packet(&pkt->pkt);
+		av_freep(&pkt);
+	}
+	q->last_pkt = NULL;
+	q->first_pkt = NULL;
+	q->nb_packets = 0;
+	q->size = 0;
+	SDL_UnlockMutex(q->mutex);
+}
+
 /* schedule a video refresh in 'delay' ms */
 static void schedule_refresh(VideoState *is, int delay, int invalidate) 
 {
@@ -1179,6 +1196,51 @@ void decode()
 			LOGE("jni - decode, quit is set, return!!!");	
 		  	break;
 		}
+
+		// seek stuff goes here
+	    	if(is->seek_req) {
+			int stream_index= -1;
+			int64_t seek_target = is->seek_pos;
+			LOGE("video stream index[%d], audio stream index[%d]", is->videoStream, is->audioStream);
+			
+
+			if     (is->videoStream >= 0) stream_index = is->videoStream;
+			else if(is->audioStream >= 0) stream_index = is->audioStream;
+
+			LOGE("stream index[%d], seek_target[%lld]", stream_index, seek_target);
+
+			if(stream_index>=0){
+				seek_target= av_rescale_q(seek_target, AV_TIME_BASE_Q, is->pFormatCtx->streams[stream_index]->time_base);
+			}
+			LOGE("after rescale, seek_target[%lld]", seek_target);
+			if(av_seek_frame(is->pFormatCtx, stream_index, seek_target, is->seek_flags) < 0) {
+
+				if (is->pFormatCtx->iformat->read_seek) {
+					LOGE("format specific");
+				} else if(is->pFormatCtx->iformat->read_timestamp) {
+					LOGE("frame_binary");
+				} else {
+					LOGE("generic");
+				}
+
+				LOGE("%s: error while seeking. target: %lld, stream_index: %d", is->pFormatCtx->filename, seek_target, stream_index);
+			} 
+			else {
+				LOGE("%s: success seeking. target: %lld, stream_index: %d", is->pFormatCtx->filename, seek_target, stream_index);
+				if(is->audioStream >= 0) {
+					packet_queue_flush(&is->audioq);
+					packet_queue_put(&is->audioq, &flush_pkt);
+				}
+				if(is->videoStream >= 0) {
+					packet_queue_flush(&is->videoq);
+					packet_queue_put(&is->videoq, &flush_pkt);
+				}
+			}
+			is->seek_req = 0;
+	    	}
+
+
+		
 		// seek stuff goes here
 		if(is->audioq.size > MAX_AUDIOQ_SIZE ) {
 //			LOGI("jni - audio queue size[%d] exceed max[%d] , sleep!!!", is->audioq.size, MAX_AUDIOQ_SIZE);	
@@ -1234,6 +1296,40 @@ void decode()
 	}
 }
 
+/*
+void stream_seek(VideoState *is, int64_t pos, int rel) {
+	if(!is->seek_req) {
+		is->seek_pos = pos;
+		is->seek_flags = rel < 0 ? AVSEEK_FLAG_BACKWARD : 0;
+		is->seek_req = 1;
+	}
+}
+*/
+void streamSeek(int inc)
+{
+
+	VideoState *is = global_video_state;
+	double pos;
+//	double incr = (double)inc/1000000.0;
+	double incr = (double)inc;
+	if(is) {
+		pos = get_master_clock(is);
+		LOGE("streamSeek : origin pos[%f]", pos);
+		pos += (double)incr;
+		LOGE("streamSeek : incr[%f] seek pos[%f]", (double)incr, pos);
+//		stream_seek(is, (int64_t)(pos * AV_TIME_BASE), incr);
+
+		if(!is->seek_req) {
+//			is->seek_pos = (int64_t)(pos * AV_TIME_BASE);
+			is->seek_pos = (int64_t)(pos) * (int64_t)AV_TIME_BASE;
+			is->seek_flags = incr < 0 ? AVSEEK_FLAG_BACKWARD : 0;
+//			is->seek_flags = AVSEEK_FLAG_ANY;
+			 
+			is->seek_req = 1;
+		}		
+	}
+}
+
 int getWidth()
 {
 	VideoState *is = global_video_state;
@@ -1250,6 +1346,3 @@ int getHeight()
 //	LOGE("video height [%d]", videoCodecContext->height);
 	return videoCodecContext->height;
 }
-
-
-
