@@ -4,15 +4,17 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
+import android.graphics.Bitmap;
+import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.BaseColumns;
 import android.provider.MediaStore;
 import android.provider.MediaStore.MediaColumns;
 import android.provider.MediaStore.Video.VideoColumns;
-import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.ResourceCursorAdapter;
 import android.widget.TextView;
@@ -20,8 +22,8 @@ import android.widget.TextView;
 public class MainActivity extends Activity {
 	public static final String LOG_TAG = MainActivity.class.getSimpleName();
 
-	
-	
+	private ImageDownloader imageDownloader;
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -33,8 +35,19 @@ public class MainActivity extends Activity {
         ListView list = (ListView) findViewById(R.id.VideoList);
         list.setAdapter(adapter);
         
+		imageDownloader = new ImageDownloader(getApplicationContext());
+		imageDownloader.setScaleType(ImageView.ScaleType.CENTER_CROP);
         
     }
+    
+    
+	@Override
+	protected void onDestroy() {
+		imageDownloader.destroy();
+		super.onDestroy();
+	}
+
+
 	final String[] proj = { 
 			BaseColumns._ID, 
 			MediaColumns.DATA, 
@@ -123,6 +136,40 @@ public class MainActivity extends Activity {
     	this.startActivity(intent);
     }
     
+	public static String timeToString(long time) {
+		long tmpTime = time / 1000;
+		long sec = tmpTime % 60;
+		long min = (tmpTime / 60) % 60;
+		long hour = (tmpTime / 60) / 60;
+		
+		String hourStr = "";
+		String minStr = "";
+		String secStr = "";
+		
+		String timeStr = "";
+		
+		if(min < 10)
+			minStr = "0" + Integer.toString((int)min);
+		else 
+			minStr = Integer.toString((int)min);
+		
+		if(sec < 10)
+			secStr = "0" + Integer.toString((int)sec);
+		else 
+			secStr = Integer.toString((int)sec);
+		
+		if(hour > 0) {
+			hourStr = Integer.toString((int)hour);
+			timeStr = hourStr + ":";
+		}
+		
+		timeStr += minStr;
+		timeStr += ":";
+		timeStr += secStr;
+		
+		return timeStr;
+	}	
+	
     private final class ContactListItemAdapter extends ResourceCursorAdapter {
         public ContactListItemAdapter(Context context, int layout, Cursor c) {
             super(context, layout, c);
@@ -131,14 +178,35 @@ public class MainActivity extends Activity {
         @Override
         public void bindView(View view, Context context, Cursor cursor) {
             TextView nameView = (TextView) view.findViewById(R.id.name);
+            TextView durationView = (TextView) view.findViewById(R.id.duration);
 
+            long id = cursor.getLong(VIDEO_ID_COLUMN_INDEX);
             String name = cursor.getString(VIDEO_DISPLAY_NAME_COLUMN_INDEX);
             String path = cursor.getString(VIDEO_DATA_COLUMN_INDEX);
             String title = cursor.getString(VIDEO_TITLE_COLUMN_INDEX);
+			long duration = cursor.getLong(VIDEO_DURATION_COLUMN_INDEX);
+			String durationString = timeToString(duration);
             
-            LogUtil.e(LOG_TAG, "video name : " + name + ", path : " + path + ", title : " + title);
+            LogUtil.e(LOG_TAG, "video name : " + name + ", path : " + path + ", title : " + title
+            		+ ", duration : " + duration + ", duration string : " + durationString);
             nameView.setText(name);
+            durationView.setText(durationString); 
             view.setTag(path);
+            
+    		ImageView imageView = (ImageView) view.findViewById(R.id.thumbnail);
+    		imageView.setImageResource(R.drawable.icon_default_video);
+    		
+    		if (imageView != null && id != 0) {					
+    			imageDownloader.download(id, path, imageView);
+//    			Bitmap bmp = MediaUtil.getVideoThumbnail(MainActivity.this.getApplicationContext(), id);
+//    			if(bmp != null) {
+//    				LogUtil.e(LOG_TAG, "width : " + bmp.getWidth() + ", height : " + bmp.getHeight());
+//					imageView.setImageBitmap(bmp);
+//					imageView.setBackgroundColor(Color.TRANSPARENT);
+//					imageView.setTag("bitmap");
+//    			}
+    		}            
+            
             
 //			final long id = cursor.getLong(idCol);
 //			final String path = cursor.getString(dataCol);

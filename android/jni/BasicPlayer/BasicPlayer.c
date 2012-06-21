@@ -1153,7 +1153,7 @@ void closeVideo()
 	}	
 
 //	SDL_Delay(100);
-	exit(0); // when didn't call exit, it doesn't work!!
+//	exit(0); // when didn't call exit, it doesn't work!!
 /*
 	if (gVideoBuffer != NULL) {
 		av_free(gVideoBuffer);

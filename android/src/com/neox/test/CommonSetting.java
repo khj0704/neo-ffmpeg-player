@@ -32,7 +32,7 @@ public final class CommonSetting {
 
 	public static class Log {
 		// Log 출력 여부 (false 일 경우라도 w, e 메시지는 출력한다.)
-		public static final boolean IS_SHOW = false;
+		public static final boolean IS_SHOW = true;
 		// Log Tag 통일
 		public static final boolean IS_ONE_TAG = true;
 		// 상세 메시지 출력
