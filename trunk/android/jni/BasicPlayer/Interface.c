@@ -57,6 +57,11 @@ JNIEXPORT void JNICALL Java_com_neox_test_FFmpegCodec_jniCloseVideo(JNIEnv *env,
 	closeVideo();
 }
 
+JNIEXPORT void JNICALL Java_com_neox_test_FFmpegCodec_jniClose(JNIEnv *env, jobject thiz)
+{
+	LOG(ANDROID_LOG_DEBUG, LOG_TAG, "MoviePlayView close()");	
+	exit(0);
+}
 
 JNIEXPORT void JNICALL Java_com_neox_test_FFmpegCodec_jniDecode(JNIEnv *env, jobject thiz)
 {

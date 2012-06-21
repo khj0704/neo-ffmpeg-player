@@ -48,10 +48,11 @@ public class FFmpegBasicActivity extends Activity {
 				_handler.postDelayed(new Runnable() {
 					@Override
 					public void run() {
-						ffmpeg.closeVideo();
+//						ffmpeg.closeVideo();
+						ffmpeg.close();
 						finish();
 					}
-				}, 1000);
+				}, 100);
 				
 			}
 		});
@@ -109,7 +110,7 @@ public class FFmpegBasicActivity extends Activity {
 	public void onBackPressed() {
 		Log.e("ffmpeg", "FFmpegBasicActivity onBackPressed()");
 		ffmpeg.closeVideo();
-		super.onBackPressed();
+//		super.onBackPressed();
 	}
 
 	@Override

@@ -196,6 +196,10 @@ public class FFmpegCodec {
 		jniStreamSeek(incr);
 	}
 	
+	public void close() {
+		jniClose();
+	}
+
 	
 	static {
         System.loadLibrary("basicplayer");
@@ -218,5 +222,7 @@ public class FFmpegCodec {
 	public native int jniRefreshVideo(Bitmap bitmap);
 	
 	public native void jniStreamSeek(int incr);
+	public native void jniClose();
+
 
 }
