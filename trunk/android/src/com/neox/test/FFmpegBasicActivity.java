@@ -7,13 +7,13 @@ import android.os.Handler;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.Window;
+import android.view.WindowManager;
+import android.widget.Toast;
 
 public class FFmpegBasicActivity extends Activity {
 	private static final String LOG_TAG = FFmpegBasicActivity.class.getSimpleName();
 	
-	
-	VideoView videoView;
-	FFmpegCodec ffmpeg;
+	private FFmpegCodec ffmpeg;
 	private float prevX;
 	private float prevY;
 	
@@ -23,6 +23,7 @@ public class FFmpegBasicActivity extends Activity {
     public void onCreate(Bundle savedInstanceState) {
         Log.e("ffmpeg", "FFmpegBasicActivity onCreate()");
         requestWindowFeature(Window.FEATURE_NO_TITLE);
+		getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN); 
         super.onCreate(savedInstanceState);
         
 
@@ -33,9 +34,9 @@ public class FFmpegBasicActivity extends Activity {
         
         ffmpeg = FFmpegCodec.getInstance(getApplicationContext());
         
-//		String path = "/mnt/sdcard/tcloud/video/dd.mp4";
         if(!ffmpeg.openVideo(path)) {
         	Log.e("ffmpeg", "ffmpeg.openVideo Failed [" + path + "]");
+        	Toast.makeText(getApplicationContext(), "동영상 열기가 실패했습니다.", Toast.LENGTH_LONG).show();
         	finish();
         	return;
         }
@@ -61,9 +62,9 @@ public class FFmpegBasicActivity extends Activity {
         setContentView(videoView);
 
 		ffmpeg.startDecodeThread();
-		ffmpeg.startAudioThread();
 		ffmpeg.startVideoThread();
-		ffmpeg.setVideoDisplayTimer(40, 0);
+		ffmpeg.startAudioThread();
+		ffmpeg.setVideoDisplayTimer(100, 0);
 		
     }
 
