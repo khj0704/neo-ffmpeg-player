@@ -54,6 +54,7 @@ import android.widget.ImageView.ScaleType;
  */
 public class ImageDownloader {
 	private static final String LOG_TAG = ImageDownloader.class.getSimpleName();
+	
 	private ScaleType scaleType;
 	private ProgressListener listener;
 	private String cacheKeyPrefix;
@@ -66,9 +67,6 @@ public class ImageDownloader {
 	private IImgDownloader	mInterface;
 	
 	//////////////////////////////////////////////////////////////////////////////
-	private boolean mAdjustInSampleSize = false;
-	private int mWantsWidth;
-	private int mWantsHeight;
 	private Context mContext;
 
 	//////////////////////////////////////////////////////////////////////////////
@@ -102,54 +100,6 @@ public class ImageDownloader {
 	 * @param url The URL of the image to download.
 	 * @param imageView The ImageView to bind the downloaded image to.
 	 */
-//	public void download(final String url, final ImageView imageView) {
-//		resetPurgeTimer();
-//		final Bitmap bitmap = getBitmapFromCache(url);
-//
-//		setScale(imageView);
-//
-//		if (bitmap == null) {
-//			forceDownload(url, imageView);
-//		} else {
-//			cancelPotentialDownload(url, imageView);
-//			imageView.setImageBitmap(bitmap);
-//			imageView.setBackgroundColor(Color.TRANSPARENT);
-//			imageView.setTag("bitmap");
-//		}
-//	}
-//	
-//	public void download(final String url, final String folderPath ,final ImageView imageView) {
-//		resetPurgeTimer();
-//		final Bitmap bitmap = getBitmapFromCache(url);
-//
-//		setScale(imageView);
-//
-//		if (bitmap == null) {
-//			forceDownload(url, folderPath ,imageView);
-//		} else {
-//			cancelPotentialDownload(url, imageView);
-//			imageView.setImageBitmap(bitmap);
-//			imageView.setBackgroundColor(Color.TRANSPARENT);
-//			imageView.setTag("bitmap");
-//		}
-//	}
-//	
-//	public void download(final String url, final ImageView imageFrame, final ImageView imageView, FileType fileType) {
-//		resetPurgeTimer();
-//		final Bitmap bitmap = getBitmapFromCache(url);
-//		
-//		setScale(imageView);
-//		
-//		if (bitmap == null) {
-//			forceDownload(url, imageFrame, imageView, fileType);
-//		} else {
-//			cancelPotentialDownload(url, imageView);
-//			imageView.setImageBitmap(bitmap);
-//			imageView.setBackgroundColor(Color.TRANSPARENT);
-//			imageView.setTag("bitmap");
-//		}
-//	}
-		
 	public void download(final long id, final String path, final ImageView imageView) {
 		resetPurgeTimer();
 		final Bitmap bitmap = getBitmapFromCache(path);
@@ -166,22 +116,6 @@ public class ImageDownloader {
 		}
 	}
 	
-//	public void download(ImageView imageView, String path, FileType fileType, ImageView thumbnailIcon) {
-//		resetPurgeTimer();
-//		final Bitmap bitmap = getBitmapFromCache(path);
-//
-//		setScale(imageView);
-//
-//		if (bitmap == null) {
-//			forceDownload(path, fileType, imageView, thumbnailIcon);
-//		} else {
-//			cancelPotentialDownload(path, imageView);
-//			imageView.setImageBitmap(bitmap);
-//			imageView.setBackgroundColor(Color.TRANSPARENT);
-//			imageView.setTag("bitmap");
-//		}
-//	}
-	
 	public void setEventListener(ProgressListener listener) {
 		this.listener = listener;
 	}
@@ -190,16 +124,6 @@ public class ImageDownloader {
 		this.scaleType = scaletype;
 	}
 	
-	public void setWantWidthAndHeight(boolean bEnable, int wantsWidth, int wantsHeight) {
-		this.mAdjustInSampleSize = bEnable;
-		this.mWantsWidth = wantsWidth;
-		this.mWantsHeight = wantsHeight;
-	}
-	
-//	public void setDecodeMaxImageSize(long maxBytes) {
-//		this.maxSize = maxBytes;
-//	}
-		
 	private void setScale(final ImageView imageView) {
 		if (scaleType != null) {
 			imageView.setScaleType(scaleType);
@@ -216,51 +140,6 @@ public class ImageDownloader {
 	 * Same as download but the image is always downloaded and the cache is not used.
 	 * Kept private at the moment as its interest is not clear.
 	 */
-//	private void forceDownload(final String url, final ImageView imageView) {
-//		// State sanity: url is guaranteed to never be null in DownloadedDrawable and cache keys.
-//		if (url == null) {
-//			imageView.setImageDrawable(null);
-//			return;
-//		}
-//
-//		if (cancelPotentialDownload(url, imageView)) {
-//			final BitmapDownloaderTask task = new BitmapDownloaderTask(url, imageView);
-//			final DownloadedDrawable downloadedDrawable = new DownloadedDrawable(task);
-//			imageView.setImageDrawable(downloadedDrawable);
-//			task.putFirst(task, url);
-//		}
-//	}
-	
-//	private void forceDownload(final String url, final String folderPath, final ImageView imageView) {
-//		// State sanity: url is guaranteed to never be null in DownloadedDrawable and cache keys.
-//		if (url == null) {
-//			imageView.setImageDrawable(null);
-//			return;
-//		}
-//
-//		if (cancelPotentialDownload(url, imageView)) {
-//			final BitmapDownloaderTask task = new BitmapDownloaderTask(imageView, folderPath);
-//			final DownloadedDrawable downloadedDrawable = new DownloadedDrawable(task);
-//			imageView.setImageDrawable(downloadedDrawable);
-//			task.putFirst(task, url);
-//		}
-//	}
-		
-//	private void forceDownload(final String url, final ImageView frameView, final ImageView imageView, FileType fileType) {
-//		// State sanity: url is guaranteed to never be null in DownloadedDrawable and cache keys.
-//		if (url == null) {
-//			imageView.setImageDrawable(null);
-//			return;
-//		}
-//		
-//		if (cancelPotentialDownload(url, imageView)) {
-//			final BitmapDownloaderTask task = new BitmapDownloaderTask(imageView, frameView, fileType);
-//			final DownloadedDrawable downloadedDrawable = new DownloadedDrawable(task);
-//			imageView.setImageDrawable(downloadedDrawable);
-//			task.putFirst(task, url);
-//		}
-//	}
-	
 	private void forceDownload(final long id, final String path, final ImageView imageView) {
 		// State sanity: url is guaranteed to never be null in DownloadedDrawable and cache keys.
 		if (path == null) {
@@ -275,21 +154,6 @@ public class ImageDownloader {
 			task.putFirst(task, path);
 		}
 	}
-	
-//	private void forceDownload(String path, FileType fileType, ImageView imageView, ImageView thumbnailIcon) {
-//		// State sanity: url is guaranteed to never be null in DownloadedDrawable and cache keys.
-//		if (path == null) {
-//			imageView.setImageDrawable(null);
-//			return;
-//		}
-//		
-//		if (cancelPotentialDownload(path, imageView)) {
-//			final BitmapDownloaderTask task = new BitmapDownloaderTask(imageView, path, fileType, thumbnailIcon);
-//			final DownloadedDrawable downloadedDrawable = new DownloadedDrawable(task);
-//			imageView.setImageDrawable(downloadedDrawable);
-//			task.putFirst(task, path);
-//		}
-//	}
 	
 	/**
 	 * Returns true if the current download has been canceled or if there was no download in
@@ -479,41 +343,8 @@ public class ImageDownloader {
 		private String path;
 		private Context mContext;
 		
-		// 리사이징을 위해 추가
-		private boolean	isResizeing = false;
-		private Rect	resizeingRect = null;
-		
 		private final WeakReference<ImageView> imageViewReference;
-//		private final WeakReference<ImageView> imageFrameViewReference;
-		
-//		public BitmapDownloaderTask(final ImageView imageView, long id2, FileType fileType2, ImageView frameView) {
-//			imageViewReference = new WeakReference<ImageView>(imageView);
-//			imageFrameViewReference = new WeakReference<ImageView>(frameView);;			
-//			this.id = id2;
-//			this.fileType = fileType2;
-//			this.path = null;
-//			this.folderPath = null;			
-//		}
-//		
-//		public BitmapDownloaderTask(final ImageView imageView, final String folderpath) {
-//			imageViewReference = new WeakReference<ImageView>(imageView);
-//			imageFrameViewReference = null;
-//			this.id = 0;
-//			this.fileType = FileType.UNKNOWN;
-//			this.path = null;
-//			this.folderPath = folderpath;			
-//		}
-//		
-//		public BitmapDownloaderTask(final String url, final ImageView imageView) {
-//			imageViewReference = new WeakReference<ImageView>(imageView);
-//			imageFrameViewReference = null;
-//			this.id = 0;
-//			this.fileType = FileType.UNKNOWN;
-//			this.path = null;
-//			this.url = url;
-//			this.folderPath = null;			
-//		}
-						
+
 		public BitmapDownloaderTask(Context context, final ImageView imageView, final long id) {
 			imageViewReference = new WeakReference<ImageView>(imageView);
 			this.id = id;
@@ -521,15 +352,6 @@ public class ImageDownloader {
 			this.mContext = context;
 		}
 
-//		public BitmapDownloaderTask(final ImageView imageView, final String path, final FileType fileType, ImageView frameView) {
-//			imageViewReference = new WeakReference<ImageView>(imageView);
-//			imageFrameViewReference = new WeakReference<ImageView>(frameView);			
-//			this.path = path;
-//			this.id = 0;
-//			this.fileType = fileType;			
-//		}
-		
-		
 		/**
 		 * Actual download method.
 		 */
@@ -568,6 +390,7 @@ public class ImageDownloader {
 				if (bitmap != null) {
 
 					if (bUseCache) {
+//						LogUtil.i(LOG_TAG, "add to cache [" + url + "]");
 						addBitmapToCache(url, bitmap);
 					}
 					else {
@@ -726,7 +549,9 @@ public class ImageDownloader {
 				key = url;
 			}
 			synchronized (sHardBitmapCache) {
+//				LogUtil.e(LOG_TAG, "add to hard cache, key [" + key + "]");
 				sHardBitmapCache.put(key, bitmap);
+//				LogUtil.i(LOG_TAG, "hard size : " + sHardBitmapCache.size() + ",  soft size : " + sSoftBitmapCache.size());
 			}
 		}
 	}
@@ -764,11 +589,13 @@ public class ImageDownloader {
 			return null;
 		}
 		
+//		LogUtil.i(LOG_TAG , "try to get from cache, key [" + key + "]");
+		
 		// First try the hard reference cache
 		synchronized (sHardBitmapCache) {
 			final Bitmap bitmap = sHardBitmapCache.get(key);
 			if (bitmap != null) {
-				//LogUtil.d(LOG_TAG, "Bitmap found in hard cache.  " + key);
+//				LogUtil.i(LOG_TAG, "Bitmap found in hard cache.  key : " + key);
 				// Bitmap found in hard cache
 				// Move element to first position, so that it is removed last
 				sHardBitmapCache.remove(key);
@@ -783,7 +610,7 @@ public class ImageDownloader {
 			final Bitmap bitmap = bitmapReference.get();
 			if (bitmap != null) {
 				// Bitmap found in soft cache
-				LogUtil.d(LOG_TAG, "Bitmap found in soft cache.  " + key);
+//				LogUtil.i(LOG_TAG, "Bitmap found in soft cache.  key : " + key);
 				return bitmap;
 			} else {
 				// Soft reference has been Garbage Collected
@@ -800,7 +627,7 @@ public class ImageDownloader {
 	 * efficiency reasons, the cache will automatically be cleared after a certain inactivity delay.
 	 */
 	public static void clearCache() {
-		LogUtil.d(LOG_TAG, "hard size : " + sHardBitmapCache.size() + ",  soft size : " + sSoftBitmapCache.size());
+		LogUtil.i(LOG_TAG, "hard size : " + sHardBitmapCache.size() + ",  soft size : " + sSoftBitmapCache.size());
 		synchronized (sHardBitmapCache) {
 			recycleBitmapOfHardCache();
 			sHardBitmapCache.clear();

@@ -401,6 +401,10 @@ int video_refresh_timer(jobject jbitmap)
 	VideoPicture *vp;
 	double actual_delay, delay, sync_threshold, ref_clock, diff;
 	if(is->video_st) {
+		if(is->quit) {
+			LOGE("video_refresh_timer : quit is set, return!!!");
+			return;
+		}
 		if(is->pictq_size == 0) {
 			LOGI("video_refresh_timer : queue size is 0, refresh again!!!");
 			schedule_refresh(is, 10, 0);
@@ -520,6 +524,8 @@ int queue_picture(VideoState *is, AVFrame *pFrame, double pts)
 {
 	VideoPicture *vp;
 	int dst_pix_fmt = PIX_FMT_RGB565LE;
+//	int dst_pix_fmt = PIX_FMT_RGBA;
+	
 	AVPicture pict;
 
 	static struct SwsContext *img_convert_ctx;
@@ -1185,6 +1191,12 @@ void closeVideo()
 	LOGE("jni-closeMovie() ended!!!");
 
 
+}
+
+void exitFFmpeg()
+{
+	LOGE("close() called, exit");
+	exit(0);
 }
 
 

@@ -2,22 +2,34 @@ package com.neox.test;
 
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.graphics.Bitmap.Config;
 import android.graphics.Canvas;
 import android.graphics.Rect;
 import android.os.Handler;
 import android.util.Log;
+import android.view.Display;
 import android.view.View;
+import android.view.WindowManager;
 
 public class VideoView extends View {
-    private Bitmap mBitmap;
+    private static final String LOG_TAG = VideoView.class.getSimpleName();
+    
+	private Bitmap mBitmap;
 	private boolean initialized;
 	private FFmpegCodec ffmpeg;
 	private Handler mHandler;
+	private Config bitmapConfig;
 
+	private Context mContext;
+
+	private boolean adjustRatio = false;
+	
     private VideoView(Context context) {
         super(context);
+        mContext = context;
         Log.d("ffmpeg", "MoviePlayView()");
         initialized = false;
+        bitmapConfig = Bitmap.Config.RGB_565;
     }
     
     public VideoView(Context context, FFmpegCodec ffmpeg) {
@@ -28,7 +40,7 @@ public class VideoView extends View {
 
 	public void setFFmpegCodec(FFmpegCodec codec) {
     	ffmpeg = codec;
-    	mBitmap = Bitmap.createBitmap(ffmpeg.getWidth(), ffmpeg.getHeight(), Bitmap.Config.RGB_565);
+    	mBitmap = Bitmap.createBitmap(ffmpeg.getWidth(), ffmpeg.getHeight(), bitmapConfig);
     	ffmpeg.setVideoView(this);
     	initialized = true;
     }
@@ -68,52 +80,59 @@ public class VideoView extends View {
 		mHandler.postDelayed(invalidate==1?refreshRunnable:timerRunnable, delay);
 	}
 	
+	public static int getScreenWidth(Context ctx) {
+		int width = 0;
+		Display display = ((WindowManager) ctx.getSystemService(Context.WINDOW_SERVICE)).getDefaultDisplay();
+		width = display.getWidth();
+		LogUtil.w(LOG_TAG, "getScreenWidth = " + width);
+		return width;
+	}
+
+	public static int getScreenHeight(Context ctx) {
+		int height = 0;
+		Display display = ((WindowManager) ctx.getSystemService(Context.WINDOW_SERVICE)).getDefaultDisplay();
+		height = display.getHeight();
+		LogUtil.w(LOG_TAG, "getScreenWidth = " + height);
+		return height;
+	}
+	
     @Override
     protected void onDraw(Canvas canvas) {
     	if(initialized) {
 //    		Log.i("ffmpeg", "draw!!!, width[" + mBitmap.getWidth() + "], height[" + mBitmap.getHeight() + "]");
     		if(ffmpeg.getWidth() != mBitmap.getWidth() || ffmpeg.getHeight() != mBitmap.getHeight()) {
     			mBitmap.recycle();
-    			mBitmap = Bitmap.createBitmap(ffmpeg.getWidth(), ffmpeg.getHeight(), Bitmap.Config.RGB_565);
+    			mBitmap = Bitmap.createBitmap(ffmpeg.getWidth(), ffmpeg.getHeight(), bitmapConfig);
+    		}
+
+    		ffmpeg.refreshVideo(mBitmap);
+    		
+    		float aspectRatio = (float)mBitmap.getWidth() / (float)mBitmap.getHeight();
+    		int screenWidth = getScreenWidth(mContext);
+    		int screenHeight = getScreenHeight(mContext); 
+
+    		int width = (int) (screenWidth);
+    		int height = (int) screenHeight;
+    		int left = 0;
+    		int top = 0;
+    		
+    		if(adjustRatio) {
+	    		height = (int) screenHeight;
+	    		width = (int) (height * aspectRatio);
+//	    		LogUtil.i(LOG_TAG, "bitmap width[" + mBitmap.getWidth() + ", bitmap heigth : " + mBitmap.getHeight() 
+//	    				+ ", ratio[" + aspectRatio + "], width[" + width + "], height[" + height);
+	    		if(width > screenWidth) {
+	    			width = (int) screenWidth;
+	    			height = (int) (width / aspectRatio);
+	    		}
+	    		left = (screenWidth - width) / 2;
+	    		top = (screenHeight - height) / 2;
     		}
     		
-    		ffmpeg.refreshVideo(mBitmap); 
+//    		LogUtil.i(LOG_TAG, "ratio[" + aspectRatio + ", left[" + left + "], top[" + top + "], width[" + width + "], height[" + height);
    	        canvas.drawBitmap(mBitmap, new Rect(0, 0, mBitmap.getWidth(), mBitmap.getHeight()), 
-   					new Rect(0, 0, 800, 480), null);
+   					new Rect(left, top, width, height), null);
 	        
-//	        SDL_Rect rect;
-//	        VideoPicture *vp;
-//	        AVPicture pict;
-//	        float aspect_ratio;
-//	        int w, h, x, y;
-//	        int i;
-//
-//	        vp = &is->pictq[is->pictq_rindex];
-//	        if(vp->bmp) {
-//	          if(is->video_st->codec->sample_aspect_ratio.num == 0) {
-//	            aspect_ratio = 0;
-//	          } else {
-//	            aspect_ratio = av_q2d(is->video_st->codec->sample_aspect_ratio) *
-//	      	is->video_st->codec->width / is->video_st->codec->height;
-//	          }
-//	          if(aspect_ratio <= 0.0) {
-//	            aspect_ratio = (float)is->video_st->codec->width /
-//	      	(float)is->video_st->codec->height;
-//	          }
-//	          // apparently this assumption is bad
-//	          h = screen->h;
-//	          w = ((int)rint(h * aspect_ratio)) & -3;
-//	          if(w > screen->w) {
-//	            w = screen->w;
-//	            h = ((int)rint(w / aspect_ratio)) & -3;
-//	          }
-//	          x = (screen->w - w) / 2;
-//	          y = (screen->h - h) / 2;
-//	          rect.x = x;
-//	          rect.y = y;
-//	          rect.w = w;
-//	          rect.h = h;
-//	          SDL_DisplayYUVOverlay(vp->bmp, &rect);	        
     	}
     }
 

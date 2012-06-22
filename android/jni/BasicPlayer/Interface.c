@@ -32,7 +32,8 @@ JNIEXPORT jint JNICALL Java_com_neox_test_FFmpegCodec_jniOpenVideo(JNIEnv *env, 
 	g_thiz = thiz;
 	
 
-	if (android_getCpuFamily() == ANDROID_CPU_FAMILY_ARM && (android_getCpuFeatures() & ANDROID_CPU_ARM_FEATURE_NEON) != 0) {
+//	if (android_getCpuFamily() == ANDROID_CPU_FAMILY_ARM && (android_getCpuFeatures() & ANDROID_CPU_ARM_FEATURE_NEON) != 0) {
+	if (android_getCpuFamily() == ANDROID_CPU_FAMILY_ARM) {
 		LOGE("jniOpenVideo() is called!!!");
 		filePath = (*env)->GetStringUTFChars(env, jFilePath, NULL);
 
@@ -60,7 +61,7 @@ JNIEXPORT void JNICALL Java_com_neox_test_FFmpegCodec_jniCloseVideo(JNIEnv *env,
 JNIEXPORT void JNICALL Java_com_neox_test_FFmpegCodec_jniClose(JNIEnv *env, jobject thiz)
 {
 	LOG(ANDROID_LOG_DEBUG, LOG_TAG, "MoviePlayView close()");	
-	exit(0);
+	exitFFmpeg();
 }
 
 JNIEXPORT void JNICALL Java_com_neox_test_FFmpegCodec_jniDecode(JNIEnv *env, jobject thiz)
