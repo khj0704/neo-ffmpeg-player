@@ -9,11 +9,11 @@ import android.os.Handler;
 import android.util.Log;
 
 public class FFmpegCodec {
+	private static final String LOG_TAG = FFmpegCodec.class.getSimpleName();
 
 	public interface VideoDecodeEndListener {
 		public void decodeEnded();
 	}
-	
 	
 	private Thread mPacketReaderThread;
 	private Thread mAudioDecodeThread;
@@ -24,6 +24,7 @@ public class FFmpegCodec {
 	private Context mContext;
 	private Handler mHandler;
 	private boolean isPaused;
+	private long mCurrTime;
 	
 	private static AudioTrack track;	
 	
@@ -46,11 +47,11 @@ public class FFmpegCodec {
 	};
 	
 	private void initAudio() {
-		int bufSize = AudioTrack.getMinBufferSize(44100,
+		int bufSize = AudioTrack.getMinBufferSize(48000,
 				AudioFormat.CHANNEL_CONFIGURATION_STEREO,
 				AudioFormat.ENCODING_PCM_16BIT);
 
-		track = new AudioTrack(AudioManager.STREAM_MUSIC, 44100,
+		track = new AudioTrack(AudioManager.STREAM_MUSIC, 48000,
 				AudioFormat.CHANNEL_CONFIGURATION_STEREO,
 				AudioFormat.ENCODING_PCM_16BIT, bufSize, AudioTrack.MODE_STREAM);
 //		track.setStereoVolume(0.1f, 0.1f);
@@ -71,7 +72,7 @@ public class FFmpegCodec {
 		new Thread(new Runnable() {
 			@Override
 			public void run() {
-//				Thread.currentThread().setPriority(Thread.MAX_PRIORITY);
+				Thread.currentThread().setPriority(Thread.MIN_PRIORITY);
 	    		Log.e("ffmpeg", "<<<<<<<<<<<<<<<< Decode Thread Start!!!!!>>>>>>>>>>>>>>>>>>>>");
 				jniDecode();
 	    		Log.e("ffmpeg", "<<<<<<<<<<<<<<<< Decode Thread Ended!!!!!>>>>>>>>>>>>>>>>>>>>");
@@ -86,7 +87,7 @@ public class FFmpegCodec {
 		new Thread(new Runnable() {
 			@Override
 			public void run() {
-//				Thread.currentThread().setPriority(Thread.MIN_PRIORITY);
+				Thread.currentThread().setPriority(Thread.MAX_PRIORITY);
 	    		Log.e("ffmpeg", "<<<<<<<<<<<<<<<< Video Thread Start!!!!!>>>>>>>>>>>>>>>>>>>>");
 				jniVideoThread();
 	    		Log.e("ffmpeg", "<<<<<<<<<<<<<<<< Video Thread Ended!!!!!>>>>>>>>>>>>>>>>>>>>");
@@ -98,7 +99,7 @@ public class FFmpegCodec {
 		new Thread(new Runnable() {
 			@Override
 			public void run() {
-//				Thread.currentThread().setPriority(Thread.MAX_PRIORITY);
+				Thread.currentThread().setPriority(Thread.MIN_PRIORITY);
 	    		Log.e("ffmpeg", "<<<<<<<<<<<<<<<< Audio Thread Start!!!!!>>>>>>>>>>>>>>>>>>>>");
 				jniAudioThread();
 	    		Log.e("ffmpeg", "<<<<<<<<<<<<<<<< Audio Thread Ended!!!!!>>>>>>>>>>>>>>>>>>>>");
@@ -150,16 +151,29 @@ public class FFmpegCodec {
 		mVideoView = videoView;
 	}
 	
-	
-	// called from jni
 	public void setVideoDisplayTimer(int delay, int invalidate) {
+		setVideoDisplayTimer(delay, invalidate, -1);
+	}
+	
+	// called from jnij
+	public void setVideoDisplayTimer(int delay, int invalidate, int currTime) {
 //		if(invalidate == 0) { 
 //			String str = String.format("setVideoDisplayTimer() called, delay[%d]ms, invalidate[%d]", delay, invalidate);
 //			Log.e("ffmpeg", str);
 //		}
+//		LogUtil.e(LOG_TAG, "curr time : " + currTime);
+//		String str = String.format("setVideoDisplayTimer() called, delay[%d]ms, invalidate[%d]", delay, invalidate);
+//		Log.e("ffmpeg", str);
+		if(currTime != -1) {
+			mCurrTime = currTime;
+		}
 		if(!isPaused) {
 			mVideoView.scheduleRefresh(delay, invalidate);
 		}
+	}
+	
+	public long getCurrTime() {
+		return mCurrTime;
 	}
 	
 	public int refreshVideo(Bitmap bitmap) {
@@ -181,11 +195,16 @@ public class FFmpegCodec {
 
 	private void pause() {
 		isPaused = true;
-		
+		if (track.getPlayState() == AudioTrack.PLAYSTATE_PLAYING) {
+			track.pause();
+		}
 	}
 
 	private void resume() {
 		isPaused = false;
+		if (track.getPlayState() != AudioTrack.PLAYSTATE_PLAYING) {
+			track.play();
+		}
 		synchronized (this) {
 			this.notifyAll();
 		}
@@ -196,10 +215,21 @@ public class FFmpegCodec {
 		jniStreamSeek(incr);
 	}
 	
+	public void absSeek(int pos) {
+		jniStreamAbsSeek(pos / 1000);
+	}
+	
 	public void close() {
 		jniClose();
 	}
 
+	public long getCurrentPosition() {
+		return jniGetCurrentTime() * 1000;
+	}
+
+	public long getDuration() {
+		return jniGetDuration() * 1000;
+	}
 	
 	static {
         System.loadLibrary("basicplayer");
@@ -214,6 +244,8 @@ public class FFmpegCodec {
 	public native int jniGetVideoWidth();
 	public native int jniGetVideoHeight();
 
+	public native int jniGetCurrentTime();
+	public native int jniGetDuration();
 	
 	public native void jniVideoThread();
 	public native void jniAudioThread();
@@ -222,7 +254,9 @@ public class FFmpegCodec {
 	public native int jniRefreshVideo(Bitmap bitmap);
 	
 	public native void jniStreamSeek(int incr);
+	public native void jniStreamAbsSeek(int incr);
 	public native void jniClose();
+
 
 
 }

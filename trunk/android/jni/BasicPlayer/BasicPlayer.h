@@ -19,14 +19,17 @@ void decode();
 int getWidth();
 int getHeight();
 
-int videoThread() ;
+int getDuration();
+int getCurrentTime();
 
-int getPicture(jobject jbitmap) ;
+int videoThread();
+
+int getPicture(jobject jbitmap);
 
 int video_refresh_timer(jobject jbitmap);
 
 void streamSeek(int pos);
-
+void streamAbsSeek(int pos);
 
 void closeVideo();
 void exitFFmpeg();

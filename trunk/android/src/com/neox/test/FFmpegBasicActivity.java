@@ -26,7 +26,6 @@ public class FFmpegBasicActivity extends Activity {
 		getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN); 
         super.onCreate(savedInstanceState);
         
-
         Intent intent = getIntent();
 		String path = intent.getStringExtra("path");
 		LogUtil.e(LOG_TAG, "path : " + path);
