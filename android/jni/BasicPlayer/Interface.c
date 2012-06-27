@@ -110,17 +110,40 @@ JNIEXPORT jint JNICALL Java_com_neox_test_FFmpegCodec_jniRefreshVideo(JNIEnv *en
 	g_VideoEnv = env;
 	g_Videothiz = thiz;
 
-//	return getPicture(bitmap);
 	return video_refresh_timer(bitmap);
 }
 
-JNIEXPORT void JNICALL Java_com_neox_test_FFmpegCodec_jniStreamSeek(JNIEnv *env, jobject thiz, jint pos)
+JNIEXPORT void JNICALL Java_com_neox_test_FFmpegCodec_jniStreamSeek(JNIEnv *env, jobject thiz, jint inc)
 {
 	g_Env = env;
 	g_thiz = thiz;
 
-//	return getPicture(bitmap);
-	streamSeek(pos);
+	streamSeek(inc);
+}
+
+JNIEXPORT void JNICALL Java_com_neox_test_FFmpegCodec_jniStreamAbsSeek(JNIEnv *env, jobject thiz, jint pos)
+{
+	g_Env = env;
+	g_thiz = thiz;
+
+	streamAbsSeek(pos);
+}
+
+
+JNIEXPORT int JNICALL Java_com_neox_test_FFmpegCodec_jniGetDuration(JNIEnv *env, jobject thiz)
+{
+	g_Env = env;
+	g_thiz = thiz;
+
+	return getDuration();
+}
+
+JNIEXPORT int JNICALL Java_com_neox_test_FFmpegCodec_jniGetCurrentTime(JNIEnv *env, jobject thiz)
+{
+	g_Env = env;
+	g_thiz = thiz;
+
+	return getCurrentTime();
 }
 
 

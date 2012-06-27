@@ -26,8 +26,8 @@
 #define MAX_VIDEOQ_SIZE (5 * 256 * 1024)
 
 //#define VIDEO_PICTURE_QUEUE_SIZE 1
-#define VIDEO_PICTURE_QUEUE_SIZE 2
-#define DEFAULT_AV_SYNC_TYPE AV_SYNC_VIDEO_MASTER
+#define VIDEO_PICTURE_QUEUE_SIZE 10
+#define DEFAULT_AV_SYNC_TYPE AV_SYNC_AUDIO_MASTER
 
 #define AV_SYNC_THRESHOLD 0.01
 #define AV_NOSYNC_THRESHOLD 10.0
@@ -214,37 +214,6 @@ static void packet_queue_flush(PacketQueue *q)
 	SDL_UnlockMutex(q->mutex);
 }
 
-/* schedule a video refresh in 'delay' ms */
-static void schedule_refresh(VideoState *is, int delay, int invalidate) 
-{
-//  SDL_AddTimer(delay, sdl_refresh_timer_cb, is);
-	JNIEnv *env = g_VideoEnv;
-	jobject obj = g_Videothiz;
-	jclass cls = 0;
-	jmethodID mid = 0;
-
-	if ((*env)->PushLocalFrame(env, 16) < 0)
-		return;
-
-	cls = (*env)->GetObjectClass(env, obj); 
-	if (cls)  {
-		mid = (*env)->GetMethodID(env, cls, "setVideoDisplayTimer", "(II)V");
-		if (mid) {
-			(*env)->CallObjectMethod(env, obj, mid, delay, invalidate);
-
-			// 에뮬레이터에서는 아래 문장 넣어야 정상동작함. 에뮬 버그로 보임.
-//			(*g_Env)->DeleteGlobalRef(g_env, aVCard); // JNI 버그인지 모르겠으나 Global Ref Table에도 추가된다. 그래서 명시적으로 Delete 해준다.
-		}
-		else {
-			LOGE("GetMethodID() failed.");
-		}	
-	}
-	else {
-		LOGE("GetObjectClass() failed.");
-	}	
-
-	(*env)->PopLocalFrame(env, NULL);
-}
 
 int video_display(VideoPicture *vp, jobject jbitmap) 
 {
@@ -305,6 +274,43 @@ double get_master_clock(VideoState *is) {
 	} else {
 		return get_external_clock(is);
 	}
+}
+
+/* schedule a video refresh in 'delay' ms */
+static void schedule_refresh(VideoState *is, int delay, int invalidate) 
+{
+//  SDL_AddTimer(delay, sdl_refresh_timer_cb, is);
+	JNIEnv *env = g_VideoEnv;
+	jobject obj = g_Videothiz;
+	jclass cls = 0;
+	jmethodID mid = 0;
+
+	if ((*env)->PushLocalFrame(env, 16) < 0)
+		return;
+
+	cls = (*env)->GetObjectClass(env, obj); 
+	if (cls)  {
+		mid = (*env)->GetMethodID(env, cls, "setVideoDisplayTimer", "(III)V");
+		if (mid) {
+			int64_t curr_time = (int64_t)(get_master_clock(is) * AV_TIME_BASE);
+			curr_time= av_rescale_q(curr_time, AV_TIME_BASE_Q, is->video_st->time_base);
+			int curr_time_int = (int)(curr_time / AV_TIME_BASE);
+//			LOGE("current time [%d]", curr_time);
+//			LOGE("current time int [%d]", curr_time_int);
+			(*env)->CallObjectMethod(env, obj, mid, delay, invalidate, curr_time_int);
+
+			// 에뮬레이터에서는 아래 문장 넣어야 정상동작함. 에뮬 버그로 보임.
+//			(*g_Env)->DeleteGlobalRef(g_env, aVCard); // JNI 버그인지 모르겠으나 Global Ref Table에도 추가된다. 그래서 명시적으로 Delete 해준다.
+		}
+		else {
+			LOGE("GetMethodID() failed.");
+		}	
+	}
+	else {
+		LOGE("GetObjectClass() failed.");
+	}	
+
+	(*env)->PopLocalFrame(env, NULL);
 }
 
 /*
@@ -401,6 +407,7 @@ int video_refresh_timer(jobject jbitmap)
 	VideoPicture *vp;
 	double actual_delay, delay, sync_threshold, ref_clock, diff;
 	if(is->video_st) {
+RETRY:		
 		if(is->quit) {
 			LOGE("video_refresh_timer : quit is set, return!!!");
 			return;
@@ -411,6 +418,7 @@ int video_refresh_timer(jobject jbitmap)
 			return;
 		} 
 		else {
+//			LOGE("picture queue rindex[%d]", is->pictq_rindex);
 			vp = &is->pictq[is->pictq_rindex];
 
 			is->video_current_pts = vp->pts;
@@ -449,6 +457,21 @@ int video_refresh_timer(jobject jbitmap)
 			if(actual_delay < 0.010) {
 				/* Really it should skip the picture instead */
 				actual_delay = 0.010;
+
+/*
+				if(is->pictq_size > 1) {
+					LOGE(">>>>>>>>>>>>>>>>>>> skip this frame!!! , queue size[%d]>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>", is->pictq_size);
+					
+					if(++is->pictq_rindex == VIDEO_PICTURE_QUEUE_SIZE) {
+						is->pictq_rindex = 0;
+					}
+					SDL_LockMutex(is->pictq_mutex);
+					is->pictq_size--;
+					SDL_CondSignal(is->pictq_cond);
+					SDL_UnlockMutex(is->pictq_mutex);
+					goto RETRY;
+				}
+*/				
 			}
 			schedule_refresh(is, (int)(actual_delay * 1000 + 0.5), 1);
 
@@ -573,7 +596,9 @@ int queue_picture(VideoState *is, AVFrame *pFrame, double pts)
 
 		
 //		LOGI("queue_picture : src frame line size[%d], dst frame line size [%d]!!", pFrame->linesize[0], vp->bmp->linesize[0]);
+//		LOGE("try to convert start");
 		sws_scale(img_convert_ctx, pFrame->data, pFrame->linesize, 0, is->video_st->codec->height, vp->bmp->data, vp->bmp->linesize);
+//		LOGE("try to convert end");
 
 		vp->pts = pts;
 
@@ -662,7 +687,9 @@ int videoThread()
 		// Save global pts to be stored in pFrame
 		global_video_pkt_pts = packet->pts;
 		// Decode video frame
+//		LOGE("try to decode start");
 		len1 = avcodec_decode_video2(is->video_st->codec, pFrame, &frameFinished, packet);
+//		LOGE("try to decode end");
 		if(packet->dts == AV_NOPTS_VALUE && pFrame->opaque && *(uint64_t*)pFrame->opaque != AV_NOPTS_VALUE) {
 			pts = *(uint64_t *)pFrame->opaque;
 		} else if(packet->dts != AV_NOPTS_VALUE) {
@@ -1035,6 +1062,10 @@ int stream_component_open(VideoState *is, int stream_index)
 			is->audio_diff_avg_count = 0;
 			/* Correct audio only if larger error than this */
 			is->audio_diff_threshold = 2.0 * SDL_AUDIO_BUFFER_SIZE / codecCtx->sample_rate;
+
+
+			LOGE("audio samplerate[%d], channels[%d], sample_format[%d]", codecCtx->sample_rate, codecCtx->channels, codecCtx->sample_fmt);
+
 			
 			memset(&is->audio_pkt, 0, sizeof(is->audio_pkt));
 			packet_queue_init(&is->audioq);
@@ -1109,6 +1140,9 @@ int prepareDecode(VideoState *is)
 			LOGE("audio codec index [%d]", audio_index);
 		}
 	}
+
+	LOGE("duration[%lld]", pFormatCtx->duration);
+	
 	if(audio_index >= 0) {
 		stream_component_open(is, audio_index);
 	}
@@ -1142,6 +1176,8 @@ int openVideo(const char *filePath)
 	is->pictq_mutex = SDL_CreateMutex();
 	is->pictq_cond = SDL_CreateCond();
 
+	is->av_sync_type = DEFAULT_AV_SYNC_TYPE;
+	
 	av_init_packet(&flush_pkt);
 	flush_pkt.data = "FLUSH";
 
@@ -1304,7 +1340,7 @@ void decode()
 			packet_queue_put(&is->audioq, packet);
 		} 
 		else {
-			LOGE("jni - Unknown Packet, Stream Index[%d]", packet->stream_index);	
+//			LOGE("jni - Unknown Packet, Stream Index[%d]", packet->stream_index);	
 			av_free_packet(packet);
 		}
 	}
@@ -1333,7 +1369,12 @@ void streamSeek(int inc)
 		LOGE("streamSeek : incr[%f] seek pos[%f]", (double)incr, pos);
 //		stream_seek(is, (int64_t)(pos * AV_TIME_BASE), incr);
 
+ 
 		if(!is->seek_req) {
+			long duration = (long) (is->pFormatCtx->duration / AV_TIME_BASE);
+			if(pos > duration) {
+				pos = duration;
+			}
 //			is->seek_pos = (int64_t)(pos * AV_TIME_BASE);
 			is->seek_pos = (int64_t)(pos) * (int64_t)AV_TIME_BASE;
 			is->seek_flags = incr < 0 ? AVSEEK_FLAG_BACKWARD : 0;
@@ -1343,6 +1384,26 @@ void streamSeek(int inc)
 		}		
 	}
 }
+
+void streamAbsSeek(int pos)
+{
+	VideoState *is = global_video_state;
+	double curr = get_master_clock(is);
+	int seek_flags = pos < curr ? AVSEEK_FLAG_BACKWARD : 0;
+	if(is) {
+		if(!is->seek_req) {
+			long duration = (long) (is->pFormatCtx->duration / AV_TIME_BASE);
+			if(pos > duration) {
+				pos = duration;
+			}
+			
+			is->seek_pos = (int64_t)(pos) * (int64_t)AV_TIME_BASE;
+			is->seek_flags = seek_flags;
+			is->seek_req = 1;
+		}		
+	}
+}
+
 
 int getWidth()
 {
@@ -1360,3 +1421,22 @@ int getHeight()
 //	LOGE("video height [%d]", videoCodecContext->height);
 	return videoCodecContext->height;
 }
+
+int getDuration()
+{
+	VideoState *is = global_video_state;
+	int64_t duration = is->pFormatCtx->duration;
+//	LOGE("duration[%lld]", pFormatCtx->duration);
+	int duration_int = (int) (duration / AV_TIME_BASE);
+	return duration_int;
+}
+
+int getCurrentTime()
+{
+	VideoState *is = global_video_state;
+	int curr_time_int = (int)get_master_clock(is);
+//	int curr_time_int = (int)get_audio_clock(is);
+	return curr_time_int;
+}
+
+

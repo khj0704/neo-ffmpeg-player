@@ -129,46 +129,33 @@ public class MainActivity extends Activity {
 		return cursor;
 	}
     
-    public void startVideo(String path) {
+    public void startVideo(String path, String title) {
     	LogUtil.e(LOG_TAG, "path : " + path);
-    	Intent intent = new Intent(this, FFmpegBasicActivity.class);
+//    	Intent intent = new Intent(this, FFmpegBasicActivity.class);
+    	Intent intent = new Intent(this, VideoPlayerActivity.class);
     	intent.putExtra("path", path);
+    	intent.putExtra("title", title);
     	this.startActivity(intent);
     }
     
-	public static String timeToString(long time) {
-		long tmpTime = time / 1000;
-		long sec = tmpTime % 60;
-		long min = (tmpTime / 60) % 60;
-		long hour = (tmpTime / 60) / 60;
-		
-		String hourStr = "";
-		String minStr = "";
-		String secStr = "";
-		
-		String timeStr = "";
-		
-		if(min < 10)
-			minStr = "0" + Integer.toString((int)min);
-		else 
-			minStr = Integer.toString((int)min);
-		
-		if(sec < 10)
-			secStr = "0" + Integer.toString((int)sec);
-		else 
-			secStr = Integer.toString((int)sec);
-		
-		if(hour > 0) {
-			hourStr = Integer.toString((int)hour);
-			timeStr = hourStr + ":";
-		}
-		
-		timeStr += minStr;
-		timeStr += ":";
-		timeStr += secStr;
-		
-		return timeStr;
-	}	
+
+    private static class VideoInfo {
+    	String path;
+    	String title;
+    	
+    	public VideoInfo(String path, String title) {
+    		this.path = path;
+    		this.title = title;
+    	}
+    	
+    	public String getPath() {
+    		return path;
+    	}
+    	
+    	public String getTitle() {
+    		return title;
+    	}
+    }
 	
     private final class ContactListItemAdapter extends ResourceCursorAdapter {
         public ContactListItemAdapter(Context context, int layout, Cursor c) {
@@ -185,13 +172,14 @@ public class MainActivity extends Activity {
             String path = cursor.getString(VIDEO_DATA_COLUMN_INDEX);
             String title = cursor.getString(VIDEO_TITLE_COLUMN_INDEX);
 			long duration = cursor.getLong(VIDEO_DURATION_COLUMN_INDEX);
-			String durationString = timeToString(duration);
+			String durationString = Util.timeToString(duration);
             
             LogUtil.e(LOG_TAG, "video name : " + name + ", path : " + path + ", title : " + title
             		+ ", duration : " + duration + ", duration string : " + durationString);
             nameView.setText(name);
-            durationView.setText(durationString); 
-            view.setTag(path);
+            durationView.setText(durationString);
+            VideoInfo info = new VideoInfo(path, title);
+            view.setTag(info);
             
     		ImageView imageView = (ImageView) view.findViewById(R.id.thumbnail);
     		imageView.setImageResource(R.drawable.icon_default_video);
@@ -227,9 +215,9 @@ public class MainActivity extends Activity {
             view.setOnClickListener(new View.OnClickListener() {
 				@Override
 				public void onClick(View v) {
-					String path = (String)view.getTag();
-					LogUtil.e(LOG_TAG, "path : " + path);
-					startVideo(path);
+					VideoInfo info = (VideoInfo)view.getTag();
+					LogUtil.e(LOG_TAG, "path : " + info.getPath() + ", title : " + info.getTitle());
+					startVideo(info.getPath(), info.getTitle());
 				}
 			});
 
