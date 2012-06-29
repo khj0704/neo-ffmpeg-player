@@ -26,7 +26,7 @@ int videoThread();
 
 int getPicture(jobject jbitmap);
 
-int video_refresh_timer(jobject jbitmap);
+void video_refresh_timer(jobject jbitmap);
 
 void streamSeek(int pos);
 void streamAbsSeek(int pos);

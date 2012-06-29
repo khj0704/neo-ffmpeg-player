@@ -6,7 +6,7 @@
  * Copyright (c) 2002-2010 BTBSolution Co., Ltd. All Rights Reserved.
  */
 
-package com.neox.test;
+package com.neox.ffmpeg;
 
 /**
  * 

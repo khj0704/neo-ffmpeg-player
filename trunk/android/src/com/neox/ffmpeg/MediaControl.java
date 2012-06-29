@@ -1,4 +1,4 @@
-package com.neox.test;
+package com.neox.ffmpeg;
 
 public interface MediaControl {
 	boolean start();

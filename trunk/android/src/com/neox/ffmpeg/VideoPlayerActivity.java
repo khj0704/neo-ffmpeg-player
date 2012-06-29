@@ -1,6 +1,4 @@
-package com.neox.test;
-
-import com.neox.test.VideoView.VideoPanel;
+package com.neox.ffmpeg;
 
 import android.app.Activity;
 import android.content.Intent;
@@ -8,15 +6,14 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
-import android.view.MotionEvent;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
-import android.view.animation.AlphaAnimation;
-import android.view.animation.Animation;
 import android.widget.FrameLayout;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import com.neox.ffmpeg.VideoView.VideoPanel;
 
 public class VideoPlayerActivity extends Activity implements MediaControl, VideoPanel {
 	private static final String LOG_TAG = VideoPlayerActivity.class.getSimpleName();
@@ -38,7 +35,7 @@ public class VideoPlayerActivity extends Activity implements MediaControl, Video
 
 	private TextView mCaptionView;
 
-	private com.neox.test.VideoPlayTime mPlayTime;
+	private com.neox.ffmpeg.VideoPlayTime mPlayTime;
 
 	private FrameLayout mVideoLayOut;
 
@@ -99,7 +96,7 @@ public class VideoPlayerActivity extends Activity implements MediaControl, Video
 		ffmpeg.startDecodeThread();
 		ffmpeg.startVideoThread();
 		ffmpeg.startAudioThread();
-		ffmpeg.setVideoDisplayTimer(100, 0);
+		ffmpeg.setVideoDisplayTimer(100, 0, -1);
 		
     }
     

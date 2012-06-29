@@ -1,4 +1,4 @@
-package com.neox.test;
+package com.neox.ffmpeg;
 
 import android.content.Context;
 import android.util.AttributeSet;

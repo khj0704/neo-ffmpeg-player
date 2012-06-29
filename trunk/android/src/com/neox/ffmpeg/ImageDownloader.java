@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.neox.test;
+package com.neox.ffmpeg;
 
 import java.io.FilterInputStream;
 import java.io.IOException;
@@ -33,14 +33,12 @@ import android.content.Context;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.Color;
-import android.graphics.Rect;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.provider.BaseColumns;
 import android.provider.MediaStore;
 import android.provider.MediaStore.MediaColumns;
-import android.view.View;
 import android.widget.ImageView;
 import android.widget.ImageView.ScaleType;
 

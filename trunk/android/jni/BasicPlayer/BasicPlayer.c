@@ -26,7 +26,7 @@
 #define MAX_VIDEOQ_SIZE (5 * 256 * 1024)
 
 //#define VIDEO_PICTURE_QUEUE_SIZE 1
-#define VIDEO_PICTURE_QUEUE_SIZE 10
+#define VIDEO_PICTURE_QUEUE_SIZE 2
 #define DEFAULT_AV_SYNC_TYPE AV_SYNC_AUDIO_MASTER
 
 #define AV_SYNC_THRESHOLD 0.01
@@ -397,7 +397,7 @@ int getPicture(jobject jbitmap)
 */
 
 
-int video_refresh_timer(jobject jbitmap) 
+void video_refresh_timer(jobject jbitmap) 
 {
 	VideoState *is = global_video_state;
 	if(is == NULL) {
@@ -407,7 +407,7 @@ int video_refresh_timer(jobject jbitmap)
 	VideoPicture *vp;
 	double actual_delay, delay, sync_threshold, ref_clock, diff;
 	if(is->video_st) {
-RETRY:		
+//RETRY:		
 		if(is->quit) {
 			LOGE("video_refresh_timer : quit is set, return!!!");
 			return;

@@ -23,7 +23,7 @@ JNIEnv *g_VideoEnv = NULL;
 jobject g_Videothiz = NULL;
 
 
-JNIEXPORT jint JNICALL Java_com_neox_test_FFmpegCodec_jniOpenVideo(JNIEnv *env, jobject thiz, jstring jFilePath)
+JNIEXPORT jint JNICALL Java_com_neox_ffmpeg_FFmpegCodec_jniOpenVideo(JNIEnv *env, jobject thiz, jstring jFilePath)
 {
 	int result;
 	const char *filePath;
@@ -50,7 +50,7 @@ JNIEXPORT jint JNICALL Java_com_neox_test_FFmpegCodec_jniOpenVideo(JNIEnv *env, 
 	}
 }
 
-JNIEXPORT void JNICALL Java_com_neox_test_FFmpegCodec_jniCloseVideo(JNIEnv *env, jobject thiz)
+JNIEXPORT void JNICALL Java_com_neox_ffmpeg_FFmpegCodec_jniCloseVideo(JNIEnv *env, jobject thiz)
 {
 	g_Env = env;
 	g_thiz = thiz;
@@ -58,13 +58,13 @@ JNIEXPORT void JNICALL Java_com_neox_test_FFmpegCodec_jniCloseVideo(JNIEnv *env,
 	closeVideo();
 }
 
-JNIEXPORT void JNICALL Java_com_neox_test_FFmpegCodec_jniClose(JNIEnv *env, jobject thiz)
+JNIEXPORT void JNICALL Java_com_neox_ffmpeg_FFmpegCodec_jniClose(JNIEnv *env, jobject thiz)
 {
 	LOG(ANDROID_LOG_DEBUG, LOG_TAG, "MoviePlayView close()");	
 	exitFFmpeg();
 }
 
-JNIEXPORT void JNICALL Java_com_neox_test_FFmpegCodec_jniDecode(JNIEnv *env, jobject thiz)
+JNIEXPORT void JNICALL Java_com_neox_ffmpeg_FFmpegCodec_jniDecode(JNIEnv *env, jobject thiz)
 {
 	g_Env = env;
 	g_thiz = thiz;
@@ -73,28 +73,28 @@ JNIEXPORT void JNICALL Java_com_neox_test_FFmpegCodec_jniDecode(JNIEnv *env, job
 }
 
 
-JNIEXPORT jint JNICALL Java_com_neox_test_FFmpegCodec_jniGetVideoWidth(JNIEnv *env, jobject thiz)
+JNIEXPORT jint JNICALL Java_com_neox_ffmpeg_FFmpegCodec_jniGetVideoWidth(JNIEnv *env, jobject thiz)
 {
 	g_Env = env;
 	g_thiz = thiz;
 	return getWidth();
 }
 
-JNIEXPORT jint JNICALL Java_com_neox_test_FFmpegCodec_jniGetVideoHeight(JNIEnv *env, jobject thiz)
+JNIEXPORT jint JNICALL Java_com_neox_ffmpeg_FFmpegCodec_jniGetVideoHeight(JNIEnv *env, jobject thiz)
 {
 	g_Env = env;
 	g_thiz = thiz;
 	return getHeight();
 }
 
-JNIEXPORT jint JNICALL Java_com_neox_test_FFmpegCodec_jniVideoThread(JNIEnv *env, jobject thiz)
+JNIEXPORT jint JNICALL Java_com_neox_ffmpeg_FFmpegCodec_jniVideoThread(JNIEnv *env, jobject thiz)
 {
 	g_Env = env;
 	g_thiz = thiz;
 	videoThread();
 }
 
-JNIEXPORT jint JNICALL Java_com_neox_test_FFmpegCodec_jniAudioThread(JNIEnv *env, jobject thiz)
+JNIEXPORT jint JNICALL Java_com_neox_ffmpeg_FFmpegCodec_jniAudioThread(JNIEnv *env, jobject thiz)
 {
 //	g_Env = env;
 //	g_thiz = thiz;
@@ -103,17 +103,17 @@ JNIEXPORT jint JNICALL Java_com_neox_test_FFmpegCodec_jniAudioThread(JNIEnv *env
 	audioThread();
 }
 
-JNIEXPORT jint JNICALL Java_com_neox_test_FFmpegCodec_jniRefreshVideo(JNIEnv *env, jobject thiz, jobject bitmap)
+JNIEXPORT void JNICALL Java_com_neox_ffmpeg_FFmpegCodec_jniRefreshVideo(JNIEnv *env, jobject thiz, jobject bitmap)
 {
 //	g_Env = env;
 //	g_thiz = thiz;
 	g_VideoEnv = env;
 	g_Videothiz = thiz;
 
-	return video_refresh_timer(bitmap);
+	video_refresh_timer(bitmap);
 }
 
-JNIEXPORT void JNICALL Java_com_neox_test_FFmpegCodec_jniStreamSeek(JNIEnv *env, jobject thiz, jint inc)
+JNIEXPORT void JNICALL Java_com_neox_ffmpeg_FFmpegCodec_jniStreamSeek(JNIEnv *env, jobject thiz, jint inc)
 {
 	g_Env = env;
 	g_thiz = thiz;
@@ -121,7 +121,7 @@ JNIEXPORT void JNICALL Java_com_neox_test_FFmpegCodec_jniStreamSeek(JNIEnv *env,
 	streamSeek(inc);
 }
 
-JNIEXPORT void JNICALL Java_com_neox_test_FFmpegCodec_jniStreamAbsSeek(JNIEnv *env, jobject thiz, jint pos)
+JNIEXPORT void JNICALL Java_com_neox_ffmpeg_FFmpegCodec_jniStreamAbsSeek(JNIEnv *env, jobject thiz, jint pos)
 {
 	g_Env = env;
 	g_thiz = thiz;
@@ -130,7 +130,7 @@ JNIEXPORT void JNICALL Java_com_neox_test_FFmpegCodec_jniStreamAbsSeek(JNIEnv *e
 }
 
 
-JNIEXPORT int JNICALL Java_com_neox_test_FFmpegCodec_jniGetDuration(JNIEnv *env, jobject thiz)
+JNIEXPORT int JNICALL Java_com_neox_ffmpeg_FFmpegCodec_jniGetDuration(JNIEnv *env, jobject thiz)
 {
 	g_Env = env;
 	g_thiz = thiz;
@@ -138,7 +138,7 @@ JNIEXPORT int JNICALL Java_com_neox_test_FFmpegCodec_jniGetDuration(JNIEnv *env,
 	return getDuration();
 }
 
-JNIEXPORT int JNICALL Java_com_neox_test_FFmpegCodec_jniGetCurrentTime(JNIEnv *env, jobject thiz)
+JNIEXPORT int JNICALL Java_com_neox_ffmpeg_FFmpegCodec_jniGetCurrentTime(JNIEnv *env, jobject thiz)
 {
 	g_Env = env;
 	g_thiz = thiz;
