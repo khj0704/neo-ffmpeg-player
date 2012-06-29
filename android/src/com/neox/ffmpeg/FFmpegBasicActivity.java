@@ -1,4 +1,4 @@
-package com.neox.test;
+package com.neox.ffmpeg;
 
 import android.app.Activity;
 import android.content.Intent;
@@ -63,7 +63,7 @@ public class FFmpegBasicActivity extends Activity {
 		ffmpeg.startDecodeThread();
 		ffmpeg.startVideoThread();
 		ffmpeg.startAudioThread();
-		ffmpeg.setVideoDisplayTimer(100, 0);
+		ffmpeg.setVideoDisplayTimer(100, 0, -1);
 		
     }
 

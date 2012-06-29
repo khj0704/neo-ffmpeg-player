@@ -1,4 +1,4 @@
-package com.neox.test;
+package com.neox.ffmpeg;
 
 import android.content.Context;
 import android.graphics.Bitmap;
@@ -55,6 +55,7 @@ public class FFmpegCodec {
 				AudioFormat.CHANNEL_CONFIGURATION_STEREO,
 				AudioFormat.ENCODING_PCM_16BIT, bufSize, AudioTrack.MODE_STREAM);
 //		track.setStereoVolume(0.1f, 0.1f);
+//		track.setStereoVolume(0.0f, 0.0f);
 	}
 	
 	public boolean openVideo(String path) {
@@ -151,9 +152,9 @@ public class FFmpegCodec {
 		mVideoView = videoView;
 	}
 	
-	public void setVideoDisplayTimer(int delay, int invalidate) {
-		setVideoDisplayTimer(delay, invalidate, -1);
-	}
+//	public void setVideoDisplayTimer(int delay, int invalidate) {
+//		setVideoDisplayTimer(delay, invalidate, -1);
+//	}
 	
 	// called from jnij
 	public void setVideoDisplayTimer(int delay, int invalidate, int currTime) {
@@ -176,8 +177,8 @@ public class FFmpegCodec {
 		return mCurrTime;
 	}
 	
-	public int refreshVideo(Bitmap bitmap) {
-		return jniRefreshVideo(bitmap);
+	public void refreshVideo(Bitmap bitmap) {
+		jniRefreshVideo(bitmap);
 	}
 
 	public boolean isPaused() {
@@ -208,7 +209,7 @@ public class FFmpegCodec {
 		synchronized (this) {
 			this.notifyAll();
 		}
-		setVideoDisplayTimer(10, 1);
+		setVideoDisplayTimer(10, 1, -1);
 	}
 
 	public void seek(int incr) {
@@ -251,7 +252,7 @@ public class FFmpegCodec {
 	public native void jniAudioThread();
 
 
-	public native int jniRefreshVideo(Bitmap bitmap);
+	public native void jniRefreshVideo(Bitmap bitmap);
 	
 	public native void jniStreamSeek(int incr);
 	public native void jniStreamAbsSeek(int incr);

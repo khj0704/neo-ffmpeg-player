@@ -1,4 +1,4 @@
-package com.neox.test;
+package com.neox.ffmpeg;
 
 import android.content.Context;
 import android.os.Handler;
@@ -9,7 +9,7 @@ import android.view.View;
 import android.widget.FrameLayout;
 import android.widget.TextView;
 
-import com.neox.test.MediaProgress.MediaProgressControl;
+import com.neox.ffmpeg.MediaProgress.MediaProgressControl;
 
 public class VideoPlayTime extends FrameLayout implements MediaProgressControl {
 	private static final String LOG_TAG = VideoPlayTime.class.getSimpleName();

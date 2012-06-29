@@ -1,4 +1,4 @@
-package com.neox.test;
+package com.neox.ffmpeg;
 
 /*
  * Copyright (C) 2008 The Android Open Source Project

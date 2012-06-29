@@ -1,4 +1,4 @@
-package com.neox.test;
+package com.neox.ffmpeg;
 
 import android.content.Context;
 import android.graphics.PixelFormat;
@@ -13,7 +13,7 @@ import android.view.WindowManager;
 import android.widget.FrameLayout;
 import android.widget.ImageButton;
 
-import com.neox.test.MediaProgress.MediaProgressControl;
+import com.neox.ffmpeg.MediaProgress.MediaProgressControl;
 
 public class MediaControlBar extends FrameLayout implements MediaProgressControl {
 	

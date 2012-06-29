@@ -1,4 +1,4 @@
-package com.neox.test;
+package com.neox.ffmpeg;
 
 import static android.opengl.GLES10.GL_CCW;
 import static android.opengl.GLES10.GL_CLAMP_TO_EDGE;
